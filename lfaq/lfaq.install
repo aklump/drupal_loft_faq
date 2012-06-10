@@ -1,0 +1,65 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Handles installation steps for lfaq
+ *
+ * @ingroup lfaq
+ * @{
+ */
+
+/**
+ * Implementation of hook_schema
+ */
+function lfaq_schema() {
+  $schema = array();
+  $schema['lfaq'] = array(
+    'description' => t('Storage of lfaq node data.'),
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),  
+      'vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'group' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('nid', 'vid'),
+    'unique keys' => array(
+      'vid' => array('vid'),
+    ),
+    'indexes' => array(
+      'nid' => array('nid'),
+    ),    
+  );
+  return $schema;
+}
+
+/**
+ * The install hook will fire when the module gets installed
+ */
+function lfaq_install() { 
+  drupal_install_schema('lfaq');
+}
+
+/*
+ * The uninstall hook will fire when the module gets uninstalled.
+ */
+function lfaq_uninstall() { 
+  drupal_uninstall_schema('lfaq'); 
+}
