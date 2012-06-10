@@ -1,0 +1,3 @@
+<?php
+
+include_once('loft_faq_node.features.inc');

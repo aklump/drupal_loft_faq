@@ -1,10 +1,10 @@
 /* $Id$ */
 
-SUMMARY: This module provides an FAQ content type and an attachment to append to
-a designated node. The attachment contains an index of FAQ categories and a
-listing of those nodes in teaser view.
+SUMMARY: This module provides an FAQ content type (via Features), an FAQ view,
+and the means to embed that view on a node.
 
 REQUIREMENTS:
+* It would be a good idea to install sort_views module (itls)
 
 INSTALLATION:
 * Download and unzip this module into your modules directory.
@@ -12,15 +12,15 @@ INSTALLATION:
 
 
 CONFIGURATION:
-* Add the NID of the page you want to use as your FAQ via the admin ui
+* Add the NID of the page you want to use as your FAQ
 * Add a link to that page to the appropriate menu
-* Create some FAQ nodes
+* Create some FAQ entities
 * CSS style as needed
 
 
 USAGE:
-* When the designated page is loaded, the FAQ index and teaser list will be
-  appended to the designated node in page view.
+* When the designated page is loaded, the FAQ index and view will be appended to
+  the page.
 
 
 --------------------------------------------------------

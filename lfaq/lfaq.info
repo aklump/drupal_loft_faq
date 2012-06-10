@@ -1,6 +1,0 @@
-; $Id$
-name = FAQ Node Type 
-description = Defines the node type to be used by Frequently Asked Questions.
-core = 6.x
-version = "6.x-dev"
-package = In the Loft Studios

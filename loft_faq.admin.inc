@@ -29,12 +29,6 @@ function loft_faq_admin_settings() {
     '#required' => TRUE,
     '#size' => 20,
   );
-  
-  $form['loft_faq_group_default'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Default Group for Questions'),
-    '#default_value' => variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT),
-  );
  
   return system_settings_form($form); 
 }

@@ -1,3 +1,4 @@
+//$Id: _module_slim.js 292 2010-09-17 20:47:05Z root $
 // $Id$
 
 /**
@@ -8,18 +9,25 @@
  * @{ 
  */
 
-var loftFaq = loftFaq || {};
+(function ($) {
 
-//loftFaq.someFunction = function() {
+Drupal.loftFaq = Drupal.loftFaq || {};
+//Drupal.loftFaq.someVariable = Drupal.loftFaq.someVariable || {};
+
+//Drupal.loftFaq.someFunction = function() {
 //  
 //}
 
-Drupal.behaviors.loftFaq = function (context) {
-  if (Drupal.jsEnabled){
+/**
+ * Core behavior for loft_faq.
+ */
+Drupal.behaviors.loftFaq = {
+  attach: function (context, settings) {
+    
     /**
      * Add Scrolling Anchors
      */
-    $(".loft-faq-toc a, a.loft-faq-top").click(function() {
+    $(".loft-faq-toc a").click(function() {
       
       //how far from the screen top do you want the item to land after scrolling
       var distanceFromTop = 50;
@@ -29,13 +37,7 @@ Drupal.behaviors.loftFaq = function (context) {
       var anchor = $(this).attr('href').split('#');
       
       //get the y point of the element to scroll to
-      var destination;
-      if ($('div.loft-faq-category-wrapper.' + anchor[1]).length) {
-        destination = $('div.loft-faq-category-wrapper.' + anchor[1]).offset().top;
-      }
-      else {
-        destination = $('.loft-faq-toc').offset().top;
-      }
+      var destination = $('div.loft-faqs-wrapper.' + anchor[1]).offset().top;
       
       //do the scrolling
       $("html:not(:animated),body:not(:animated)")
@@ -49,8 +51,15 @@ Drupal.behaviors.loftFaq = function (context) {
         }
       );
       return false;
-    });  
-  }
+    });
+
+	}
 }
+
+/**
+ * @} End of "defgroup admin_behaviors".
+ */
+ 
+})(jQuery);
 
 /** @} */ //end of group loft_faq
