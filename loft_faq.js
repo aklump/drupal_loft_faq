@@ -49,7 +49,7 @@
 
         //how far from the screen top do you want the item to land after scrolling
         var distanceFromTop = 50;
-        var speed = 500;
+        var speed = 100;
 
         //get the name of the anchor
         var anchor = $(this).attr('href').split('#');

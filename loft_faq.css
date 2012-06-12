@@ -1,8 +1,8 @@
 .loft-faq-top {
   font-size: .75em;
-  position: absolute;
-  top: 0;
-  right: 0;
+  text-align: right;
+  display: block;
+  margin: 1em 0;
 }
 .loft-faq-category-wrapper {
   margin: 2em 0 0 0;
