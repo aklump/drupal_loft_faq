@@ -1,6 +1,4 @@
 <?php
-// $Id$
-
 /**
  * @file
  * Renders content for the table of contents
@@ -9,7 +7,7 @@
    group
  *
  * @ingroup loft_faq Frequently Asked Questions
- * @{ 
+ * @{
  */
 ?>
 <a name="loft-faq-toc"></a>

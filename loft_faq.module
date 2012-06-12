@@ -1,6 +1,4 @@
 <?php
-// $Id$
-
 /**
  * @file
  * Base module file for loft_faq
@@ -17,6 +15,13 @@ define('LOFT_FAQ_AUTOCOMPLETE', 'loft-faq/autocomplete');
  * The default group
  */
 define('LOFT_FAQ_GROUP_DEFAULT', 'General');
+
+/**
+ * @var LOFT_FAQ_PATH_ADMIN_SETTINGS
+ *
+ * Path to admin settings
+ */
+define('LOFT_FAQ_PATH_ADMIN_SETTINGS', 'admin/settings/loft-faq');
 
 /**
  * Get functional nodes; these should not be deleted!
@@ -44,32 +49,12 @@ function loft_faq_form_alter(&$form, $form_state, $form_id) {
     unset($form['buttons']['delete']);
 
     //create an auto menu link for the faq node
-    if ($form['nid']['#value'] == variable_get('loft_faq_faq_page_nid', NULL) && empty($form['menu']['link_title']['#default_value'])) {
+    if ($form['nid']['#value'] == variable_get('loft_faq_faq_page_nid', NULL) &&
+        empty($form['menu']['link_title']['#default_value'])) {
       $form['menu']['#collapsed'] = 0;
-      $form['menu']['link_title']['#default_value'] = t('Frequently Asked Questions');
+      $form['menu']['link_title']['#default_value'] = t('FAQ');
     }
   }
-}
-
-/**
- * Implementation of hook_enable()
- */
-function loft_faq_enable() {
-  //message about module settings
-  drupal_set_message(t('You may adjust settings for FAQ by visiting <a href="@url">@url</a>.', array('@url' => url('admin/settings/loft-faq'))));
-
-  //make a note of who enabled it
-  global $user;
-  watchdog('loft_faq', 'loft_faq module enabled by %user (uid: %uid)', array('%user' => $user->name, '%uid' => $user->uid));
-}
-
-/**
- * Implementation of hook_disable()
- */
-function loft_faq_disable() {
-  //make a note of who disabled it
-  global $user;
-  watchdog('loft_faq', 'loft_faq module disabled by %user (uid: %uid)', array('%user' => $user->name, '%uid' => $user->uid));
 }
 
 /**
@@ -103,7 +88,7 @@ function loft_faq_help($path, $arg) {
 
     case 'node/%/edit':
       if ($arg[1] == variable_get('loft_faq_faq_page_nid', NULL)) {
-        $help = '<p>' . t('The <strong>Frequently Asked Questions</strong> are appended to the content of this node. <a href="@url">Adjust settings.</a>', array('@url' => url('admin/settings/loft-faq'))) . '</p>';
+        $help = '<p>' . t('The <strong>Frequently Asked Questions</strong> are appended to the content of this node. <a href="@url">Adjust settings.</a>', array('@url' => url(LOFT_FAQ_PATH_ADMIN_SETTINGS))) . '</p>';
       }
       return $help;
 
@@ -114,20 +99,18 @@ function loft_faq_help($path, $arg) {
  * Implementation of hook_init()
  */
 function loft_faq_init() {
-  if (variable_get('loft_faq_faq_page_nid', NULL) === NULL) {
-    drupal_set_message(t('Please define which node to use as your FAQ page by visiting <a href="@url">@url</a>, or disable the Frequently Asked Questions module.', array('@url' => url('admin/settings/loft-faq'))), 'warning', FALSE);
+  if ($_GET['q'] != LOFT_FAQ_PATH_ADMIN_SETTINGS &&
+      !($nid = variable_get('loft_faq_faq_page_nid', NULL))) {
+    drupal_set_message(t('Please define which node to use as your FAQ page by visiting <a href="@url">@url</a>, or disable the Frequently Asked Questions module.', array('@url' => url(LOFT_FAQ_PATH_ADMIN_SETTINGS))), 'warning', FALSE);
   }
 }
 
 /**
- * Implementation of hook_perm()
+ * Implements hook_perm().
  */
-function loft_faq_permission() {
+function loft_faq_perm() {
   return array(
-    'administer loft_faq' => array(
-      'title' => t('Administer loft_faq'),
-      'description' => t('Perform administration tasks for loft_faq.'),
-    ),
+    'administer loft_faq',
   );
 }
 
@@ -137,7 +120,7 @@ function loft_faq_permission() {
 function loft_faq_menu() {
   $items = array();
 
-  $items['admin/settings/loft-faq'] = array(
+  $items[LOFT_FAQ_PATH_ADMIN_SETTINGS] = array(
     'title' => 'FAQ settings',
     'description' => 'Configure how FAQ behaves.',
     'page callback' => 'drupal_get_form',
@@ -222,7 +205,6 @@ function loft_faq_link($type, $object, $teaser = FALSE) {
   return $links;
 }
 
-
 /**
  * Implementation of hook_theme
  */
@@ -291,9 +273,26 @@ function loft_faq_get_faq_categories($reset = FALSE) {
 
 /**
  * Make a css safe class or id
+ *
+ * @param string or array $input
+ *   The string will be made css safe; array values will be made css safe
+ * @param bool $flatten
+ *   Optional.  Set to TRUE to flatten arrays into space separated strings
+ *
+ * @return string or array
  */
-function loft_faq_css_safe($string) {
-  return strtolower(preg_replace('/[\W_]+/', '-', $string));
+function loft_faq_css_safe($input, $flatten = FALSE) {
+  if (is_array($input)) {
+    $function = __FUNCTION__;
+    foreach ($input as $key => $value) {
+      $input[$key] = $function($value);
+    }
+    return $flatten ? trim(implode(' ', $input)) : $input;
+  }
+  elseif (is_string($input)) {
+    return trim(strtolower(preg_replace('/[\W_]+/', '-', $input)), '-');
+  }
+  return $input;
 }
 
 /**

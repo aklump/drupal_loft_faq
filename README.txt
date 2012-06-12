@@ -1,5 +1,3 @@
-/* $Id$ */
-
 SUMMARY: This module provides an FAQ content type and an attachment to append to
 a designated node. The attachment contains an index of FAQ categories and a
 listing of those nodes in teaser view.

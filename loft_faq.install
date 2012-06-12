@@ -1,0 +1,34 @@
+<?php
+/**
+ * @file
+ * Handles installation steps for loft_faq
+ *
+ * @ingroup func_search
+ * @{
+ */
+
+/*
+ * Implements hook_uninstall().
+ */
+function loft_faq_uninstall() {
+
+  //Clean up our entries in the variables table.
+  if ($result = db_query("SELECT name FROM {variable} WHERE `name` LIKE 'loft_faq%'")) {
+    foreach($result as $data) {
+      variable_del($data->name);
+    }
+  }
+
+  //delete blocks
+  db_query("DELETE FROM {block} WHERE `module` = 'loft_faq'");
+}
+
+/**
+ * Implements hook_enable().
+ */
+function loft_faq_enable() {
+  //message about module settings
+  drupal_set_message(t('You may adjust settings for Frequently Asked Questions by visiting <a href="@url">@url</a>.', array('@url' => url(LOFT_FAQ_PATH_ADMIN_SETTINGS))));
+}
+
+/** @} */ //end of group loft_faq
