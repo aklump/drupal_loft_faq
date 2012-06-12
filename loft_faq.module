@@ -262,7 +262,8 @@ function loft_faq_get_faq_by_category($category, $reset = FALSE) {
 function loft_faq_get_faq_categories($reset = FALSE) {
   static $categories;
   if (empty($categories) || $reset) {
-    $categories = array();
+    $default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
+    $categories = drupal_map_assoc(array($default));
     $result = db_query("SELECT DISTINCT(`group`) FROM {lfaq} g JOIN {node} n USING (vid) WHERE n.status = 1 ORDER by `group` ASC");
     while ($data = db_fetch_object($result)) {
       $categories[$data->group] = $data->group;
