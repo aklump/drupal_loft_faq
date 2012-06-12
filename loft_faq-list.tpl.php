@@ -4,7 +4,7 @@
  * Template file for category listings
  *
  * $anchor - the name attribute for the anchor tag; correlates with the toc
- * $category - the category name
+ * $category - the santized category name
  * $items - an array of renderable arrays holding the items
  *
  * @ingroup loft_faq Frequently Asked Questions

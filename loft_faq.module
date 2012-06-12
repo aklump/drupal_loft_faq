@@ -145,28 +145,30 @@ function loft_faq_node_view($node, $view_mode, $langcode) {
    */
   if ($node->nid == variable_get('loft_faq_faq_page_nid', NULL)) {
     $toc = $list = array();
-    foreach (loft_faq_get_faq_categories() as $key => $category) {
+    foreach (($categories = loft_faq_get_faq_categories()) as $category) {
       $category = empty($category)
         ? variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)
         : $category;
-      if ($nodes = loft_faq_get_faq_by_category($key)) {
+      $category_safe = check_plain($category);
+      if ($nodes = loft_faq_get_faq_by_category($category)) {
         $anchor = loft_faq_css_safe($category);
-        $toc[$anchor] = $category;
+        $toc[$anchor] = $category_safe;
+        $items = array();
         foreach ($nodes as $faq_node) {
           $items[] = array(
             '#theme' => 'loft_faq_item',
-            '#category' => $category,
+            '#category' => $category_safe,
             '#anchor' => $anchor,
             '#node' => $faq_node,
           );
         }
-        $list[] = array(
-          '#theme' => 'loft_faq_list',
-          '#category' => $category,
-          '#anchor' => $anchor,
-          '#items' => $items,
-        );
       }
+      $list[] = array(
+        '#theme' => 'loft_faq_list',
+        '#category' => $category_safe,
+        '#anchor' => $anchor,
+        '#items' => $items,
+      );
     }
     drupal_add_js(drupal_get_path('module', 'loft_faq') . '/loft_faq.js', 'file');
 
@@ -235,49 +237,29 @@ function loft_faq_get_faq_by_category($category, $reset = FALSE) {
     }
   }
   return $faq[$category];
-
-
-
-
-  //@todo
-  static $faq;
-  if (empty($faq[$category]) || $reset) {
-
-    //the default category will actually be looking for a blank spot @see loft_faq_nodeapi
-    if (($default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT) && $category == 'default')) {
-      $category = '';
-    }
-    //@todo
-    $result = db_query("SELECT n.nid FROM {node} n JOIN {lfaq} f USING (vid) WHERE status=1 AND f.`group` = '%s' ORDER BY f.weight ASC", $category);
-    while ($data = db_fetch_object($result)) {
-      if (($node = node_load($data->nid)) && node_access('view', $node)) {
-        $faq[$category][$node->nid] = $node;
-      }
-    }
-  }
-  return $faq[$category];
 }
 
 /**
  * Get an array of FAQ categories
  *
  * @return array
- *   keys are numerical, values are human names
+ *   keys are irrelevant, values are human names
  */
 function loft_faq_get_faq_categories($reset = FALSE) {
   static $categories;
   if (empty($categories) || $reset) {
-    $view_name = 'loft_faq';
-    $display_id = 'default';
-    $result = views_get_view_result($view_name, $display_id);
+    $result = views_get_view_result('loft_faq', 'default');
     $categories = array();
+    $default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
     foreach ($result as $data) {
       $node = node_load($data->nid);
       //empty category
-      if (empty($node->field_group['und'][0]['value'])) {
-        $node->field_group['und'][0]['value'] = t('General');
+      if (!($category = loft_faq_get_node_category($node))) {
+        $category = loft_faq_set_node_category($default);
       }
-      $categories[$node->field_group['und'][0]['value']] = $node->field_group['und'][0]['safe_value'];
+      if (!in_array($category, $categories)) {
+        $categories[] = $category;
+      }
     }
     asort($categories);
   }
@@ -312,7 +294,6 @@ function loft_faq_css_safe($input, $flatten = FALSE) {
  * Implementation of hook_form_alter
  */
 function loft_faq_form_loft_faq_node_form_alter(&$form, $form_state) {
-  //@todo Go through this per 6.x
   $form['field_group']['und'][0]['value']['#autocomplete_path'] = LOFT_FAQ_AUTOCOMPLETE . '/loft_faq/group';
 }
 
@@ -322,57 +303,73 @@ function loft_faq_form_loft_faq_node_form_alter(&$form, $form_state) {
 function loft_faq_node_presave($node) {
 
   //@todo convert to 7 code
-  if ($node->type == 'lfaq') {
-    if ($op == 'presave') {
-      //for flexibility sake (changing the default group on the fly from admin and
-      //quick updates) we don't want to actually record teh default group to the
-      //db, we'll leave it blank and insert the default on load, etc.
-      if (($default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)) && $default == $node->group) {
-        $node->group = '';
-      }
-    }
-    elseif ($op == 'load' && ($default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)) && empty($node->group)) {
-
-      //fill in the blanks with default on load
-      $node->group = $default;
+  if ($node->type == 'loft_faq') {
+    //for flexibility sake (changing the default group on the fly from admin and
+    //quick updates) we don't want to actually record teh default group to the
+    //db, we'll leave it blank and insert the default on load, etc.
+    if (($default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT))
+        && $default == loft_faq_get_node_category($node)) {
+      loft_faq_set_node_category($node, NULL);
     }
   }
 }
 
-///**
-// * Get the category of a node
-// *
-// * @param object $node
-// * @param string $type
-// *   - defaults to 'value', which is hte machine value
-// *   - set to 'safe', to the get the display value
-// *
-// * @return string
-// */
-//function loft_faq_get_node_category($node, $type = NULL) {
-//  if (!isset($node->field_group['und'][0])) {
-//    return NULL;
-//  }
-//  if ($type !== NULL) {
-//    return isset($node->field_group['und'][0][$type]) ? $node->field_group['und'][0][$type] : NULL;
-//  }
-//  return $node->field_group['und'][0];
-//}
-//
-///**
-// * Determine if the faq is in a certain category
-// *
-// * @param object $node
-// * @param string $category
-// *
-// * @return bool
-// */
-//function loft_faq_in_category($node, $category) {
-//  if ($has = loft_faq_get_node_category($node, 'value')) {
-//    return $category == $has;
-//  }
-//  return FALSE;
-//}
+/**
+ * Implements hook_node_load().
+ */
+function loft_faq_node_load($nodes, $types) {
+  if (!in_array('loft_faq', $types)) {
+    return;
+  }
+  $default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
+  foreach ($nodes as $node) {
+    if ($default && !loft_faq_get_node_category($node)) {
+      loft_faq_set_node_category($node, $default);
+    }
+  }
+}
+
+/**
+ * Get the category of a node
+ *
+ * @param object $node
+ *
+ * @return string
+ */
+function loft_faq_get_node_category($node) {
+  return empty($node->field_group['und'][0]['value']) ? NULL : $node->field_group['und'][0]['value'];
+}
+
+/**
+ * Set the category of a node
+ *
+ * @param object $node
+ * @param string $category
+ *
+ * @return string
+ */
+function loft_faq_set_node_category($node, $category) {
+  $node->field_group['und'][0]['value'] = $category;
+  if (array_key_exists('safe_value', $node->field_group['und'][0])) {
+    $node->field_group['und'][0]['safe_value'] = check_plain($category);
+  }
+  return $category;
+}
+
+/**
+ * Determine if the faq is in a certain category
+ *
+ * @param object $node
+ * @param string $category
+ *
+ * @return bool
+ */
+function loft_faq_in_category($node, $category) {
+  if ($has = loft_faq_get_node_category($node)) {
+    return $category == $has;
+  }
+  return FALSE;
+}
 
 /**
  * Implementation of hook_sort_views_views
