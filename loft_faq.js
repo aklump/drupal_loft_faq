@@ -19,6 +19,32 @@
       /**
        * Add Scrolling Anchors
        */
+      $('dl.loft-faq-category')
+      .once('loft-faq', function(){
+        var $list = $(this);
+
+        $list.find('dd.loft-faq-answer')
+        .addClass('collapsed')
+        .hide();
+        $list.find('dt.loft-faq-question')
+        .addClass('collapsed')
+        .wrapInner('<a href="#">')
+        .find('a')
+        .click(function(){
+          var $question = $(this).parent('dt');
+          var $answer = $question.next('dd');
+          if ($answer.find(':visible').length) {
+            $answer.hide();
+          }
+          else {
+            $answer.show();
+          }
+          $answer.toggleClass('collapsed');
+          $question.toggleClass('collapsed');
+          return false;
+        });
+      });
+
       $(".loft-faq-toc a, a.loft-faq-top").click(function() {
 
         //how far from the screen top do you want the item to land after scrolling

@@ -35,4 +35,24 @@ function hook_loft_faq_set_node_category_alter($node, $category) {
 
 }
 
+/**
+ * Implements hook_loft_faq_item_alter().
+ *
+ * Adds the SANITIZED values for #question and #answer
+ *
+ * @param array &$item
+ *
+ * $item
+ * - #category
+ * - #anchor
+ * - #node
+ *
+ * @see loft_faq_node_view()
+ */
+function hook_loft_faq_item_alter(&$item) {
+  $item['#question'] = array('#markup' => check_plain($item['#node']->title));
+  $item['#answer'] = array('#markup' => $item['#node']->body['und'][0]['safe_value']);
+}
+
+
 /** @} */ //end of group hooks

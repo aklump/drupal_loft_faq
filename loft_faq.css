@@ -1,0 +1,28 @@
+.loft-faq-top {
+  font-size: .75em;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.loft-faq-category-wrapper {
+  margin: 2em 0 0 0;
+  position: relative;
+}
+.loft-faq-processed dt {
+  /*cursor: pointer;*/
+  padding: 1em 1em .5em 1em;
+}
+.loft-faq-processed dd {
+  padding: .5em 1em 1em 2em;
+  font-size: .875em;
+}
+
+.loft-faq-processed dt,
+.loft-faq-processed dd {
+  background: #eee;
+}
+
+.loft-faq-processed dt.collapsed,
+.loft-faq-processed dd.collapsed {
+  background: transparent;
+}

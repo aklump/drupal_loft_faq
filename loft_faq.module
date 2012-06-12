@@ -148,6 +148,15 @@ function loft_faq_menu() {
 }
 
 /**
+ * Implementats hook_preprocess_html().
+ */
+function loft_faq_preprocess_html(&$vars) {
+  if (arg(0) == 'node' && ($nid = arg(1)) && $nid == variable_get('loft_faq_faq_page_nid', NULL)) {
+    $vars['classes_array'][] = 'loft-faq-page';
+  }
+}
+
+/**
  * Implements hook_node_view().
  */
 function loft_faq_node_view($node, $view_mode, $langcode) {
@@ -167,12 +176,14 @@ function loft_faq_node_view($node, $view_mode, $langcode) {
         $toc[$anchor] = $category_safe;
         $items = array();
         foreach ($nodes as $faq_node) {
-          $items[] = array(
+          $item = array(
             '#theme' => 'loft_faq_item',
             '#category' => $category_safe,
             '#anchor' => $anchor,
             '#node' => $faq_node,
           );
+          drupal_alter('loft_faq_item', $item);
+          $items[] = $item;
         }
       }
       $list[] = array(
@@ -183,6 +194,7 @@ function loft_faq_node_view($node, $view_mode, $langcode) {
       );
     }
     drupal_add_js(drupal_get_path('module', 'loft_faq') . '/loft_faq.js', 'file');
+    drupal_add_css(drupal_get_path('module', 'loft_faq') . '/loft_faq.css');
 
     //append the index
     $weight = $node->content['body']['#weight'];
@@ -210,6 +222,25 @@ function loft_faq_node_view($node, $view_mode, $langcode) {
 }
 
 /**
+ * Implements hook_loft_faq_item_alter().
+ *
+ * Adds the SANITIZED values for #question and #answer
+ *
+ * @param array &$item
+ *
+ * $item
+ * - #category
+ * - #anchor
+ * - #node
+ *
+ * @see loft_faq_node_view()
+ */
+function loft_faq_loft_faq_item_alter(&$item) {
+  $item['#question'] = array('#markup' => check_plain($item['#node']->title));
+  $item['#answer'] = array('#markup' => $item['#node']->body['und'][0]['safe_value']);
+}
+
+/**
  * Implementation of hook_theme
  */
 function loft_faq_theme($existing, $type, $theme, $path) {
@@ -223,7 +254,7 @@ function loft_faq_theme($existing, $type, $theme, $path) {
       'template' => 'loft_faq-list',
     ),
     'loft_faq_item' => array(
-      'variables' => array('category' => NULL, 'anchor' => NULL, 'node' => NULL),
+      'variables' => array('category' => NULL, 'anchor' => NULL, 'question' => NULL, 'answer' => NULL, 'node' => NULL),
       'template' => 'loft_faq-item',
     ),
   );
@@ -362,7 +393,7 @@ function loft_faq_node_load($nodes, $types) {
  */
 function loft_faq_get_node_category($node) {
   $category = empty($node->field_group['und'][0]['value']) ? NULL : $node->field_group['und'][0]['value'];
-  drupal_alter('loft_faq_get_node_category_alter', $category, $node);
+  drupal_alter('loft_faq_get_node_category', $category, $node);
   return $category;
 }
 
@@ -379,7 +410,7 @@ function loft_faq_set_node_category($node, $category) {
   if (array_key_exists('safe_value', $node->field_group['und'][0])) {
     $node->field_group['und'][0]['safe_value'] = check_plain($category);
   }
-  drupal_alter('loft_faq_set_category_alter', $category, $node);
+  drupal_alter('loft_faq_set_category', $category, $node);
   return $category;
 }
 
