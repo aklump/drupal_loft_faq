@@ -30,6 +30,7 @@ function loft_faq_node_views_default_views() {
   $handler->display->display_options['pager']['type'] = 'none';
   $handler->display->display_options['style_plugin'] = 'default';
   $handler->display->display_options['row_plugin'] = 'node';
+  $handler->display->display_options['row_options']['view_mode'] = 'full';
   $handler->display->display_options['row_options']['links'] = 0;
   $handler->display->display_options['row_options']['comments'] = 0;
   /* Field: Content: Title */
@@ -73,6 +74,16 @@ function loft_faq_node_views_default_views() {
   $handler->display->display_options['sorts']['field_sort_value']['id'] = 'field_sort_value';
   $handler->display->display_options['sorts']['field_sort_value']['table'] = 'field_data_field_sort';
   $handler->display->display_options['sorts']['field_sort_value']['field'] = 'field_sort_value';
+  /* Contextual filter: Content: Type */
+  $handler->display->display_options['arguments']['type']['id'] = 'type';
+  $handler->display->display_options['arguments']['type']['table'] = 'node';
+  $handler->display->display_options['arguments']['type']['field'] = 'type';
+  $handler->display->display_options['arguments']['type']['default_action'] = 'not found';
+  $handler->display->display_options['arguments']['type']['default_argument_type'] = 'fixed';
+  $handler->display->display_options['arguments']['type']['default_argument_skip_url'] = 0;
+  $handler->display->display_options['arguments']['type']['summary']['number_of_records'] = '0';
+  $handler->display->display_options['arguments']['type']['summary']['format'] = 'default_summary';
+  $handler->display->display_options['arguments']['type']['summary_options']['items_per_page'] = '25';
   /* Contextual filter: Content: Question Topic (field_group) */
   $handler->display->display_options['arguments']['field_group_value']['id'] = 'field_group_value';
   $handler->display->display_options['arguments']['field_group_value']['table'] = 'field_data_field_group';
@@ -87,13 +98,7 @@ function loft_faq_node_views_default_views() {
   $handler->display->display_options['filters']['status']['table'] = 'node';
   $handler->display->display_options['filters']['status']['field'] = 'status';
   $handler->display->display_options['filters']['status']['value'] = '1';
-  /* Filter criterion: Content: Type */
-  $handler->display->display_options['filters']['type']['id'] = 'type';
-  $handler->display->display_options['filters']['type']['table'] = 'node';
-  $handler->display->display_options['filters']['type']['field'] = 'type';
-  $handler->display->display_options['filters']['type']['value'] = array(
-    'loft_faq' => 'loft_faq',
-  );
+  $handler->display->display_options['filters']['status']['group'] = 1;
   $export['loft_faq'] = $view;
 
   return $export;

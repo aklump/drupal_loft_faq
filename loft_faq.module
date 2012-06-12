@@ -17,6 +17,13 @@ define('LOFT_FAQ_AUTOCOMPLETE', 'ovacue/autocomplete');
 define('LOFT_FAQ_GROUP_DEFAULT', 'General');
 
 /**
+ * @var LOFT_FAQ_NODE_TYPE
+ *
+ * The default node type to use as an faq
+ */
+define('LOFT_FAQ_NODE_TYPE', 'loft_faq');
+
+/**
  * @var LOFT_FAQ_PATH_ADMIN_SETTINGS
  *
  * Path to admin settings
@@ -91,6 +98,11 @@ function loft_faq_help($path, $arg) {
  * Implementation of hook_init()
  */
 function loft_faq_init() {
+
+  // Identify the node type
+  global $loft_faq_type;
+  $loft_faq_type = variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE);
+
   if ($_GET['q'] != LOFT_FAQ_PATH_ADMIN_SETTINGS &&
       !($nid = variable_get('loft_faq_faq_page_nid', NULL))) {
     drupal_set_message(t('Please define which node to use as your FAQ page by visiting <a href="@url">@url</a>, or disable the Frequently Asked Questions module.', array('@url' => url(LOFT_FAQ_PATH_ADMIN_SETTINGS))), 'warning', FALSE);
@@ -228,10 +240,16 @@ function loft_faq_theme($existing, $type, $theme, $path) {
  * - an array of nodes keyed by nid
  */
 function loft_faq_get_faq_by_category($category, $reset = FALSE) {
+  global $loft_faq_type;
   $faq = &drupal_static(__FUNCTION__, array());
   if (!array_key_exists($category, $faq)) {
     $faq[$category] = array();
-    $result = (array) views_get_view_result('loft_faq', 'default', $category);
+    $result = (array) views_get_view_result(
+      'loft_faq',
+      'default',
+      $loft_faq_type,
+      $category
+    );
     foreach ($result as $data) {
       $faq[$category][$data->nid] = node_load($data->nid);
     }
@@ -246,9 +264,14 @@ function loft_faq_get_faq_by_category($category, $reset = FALSE) {
  *   keys are irrelevant, values are human names
  */
 function loft_faq_get_faq_categories($reset = FALSE) {
+  global $loft_faq_type;
   static $categories;
   if (empty($categories) || $reset) {
-    $result = views_get_view_result('loft_faq', 'default');
+    $result = (array) views_get_view_result(
+      'loft_faq',
+      'default',
+      $loft_faq_type
+    );
     $categories = array();
     $default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
     foreach ($result as $data) {
@@ -302,8 +325,8 @@ function loft_faq_form_loft_faq_node_form_alter(&$form, $form_state) {
  */
 function loft_faq_node_presave($node) {
 
-  //@todo convert to 7 code
-  if ($node->type == 'loft_faq') {
+  global $loft_faq_type;
+  if ($node->type == $loft_faq_type) {
     //for flexibility sake (changing the default group on the fly from admin and
     //quick updates) we don't want to actually record teh default group to the
     //db, we'll leave it blank and insert the default on load, etc.
@@ -318,7 +341,8 @@ function loft_faq_node_presave($node) {
  * Implements hook_node_load().
  */
 function loft_faq_node_load($nodes, $types) {
-  if (!in_array('loft_faq', $types)) {
+  global $loft_faq_type;
+  if (!in_array($loft_faq_type, $types)) {
     return;
   }
   $default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
@@ -337,7 +361,9 @@ function loft_faq_node_load($nodes, $types) {
  * @return string
  */
 function loft_faq_get_node_category($node) {
-  return empty($node->field_group['und'][0]['value']) ? NULL : $node->field_group['und'][0]['value'];
+  $category = empty($node->field_group['und'][0]['value']) ? NULL : $node->field_group['und'][0]['value'];
+  drupal_alter('loft_faq_get_node_category_alter', $category, $node);
+  return $category;
 }
 
 /**
@@ -353,6 +379,7 @@ function loft_faq_set_node_category($node, $category) {
   if (array_key_exists('safe_value', $node->field_group['und'][0])) {
     $node->field_group['und'][0]['safe_value'] = check_plain($category);
   }
+  drupal_alter('loft_faq_set_category_alter', $category, $node);
   return $category;
 }
 
@@ -385,14 +412,13 @@ function loft_faq_in_category($node, $category) {
  * @return array()
  */
 function loft_faq_sort_views_views() {
+  global $loft_faq_type;
   return array(
-    'loft_faq' => array(
+    $loft_faq_type => array(
       'sort_field' => 'field_sort',
     ),
   );
 }
-
-
 
 /**
  * Return the list of autocomplete suggestions
@@ -405,11 +431,12 @@ function loft_faq_sort_views_views() {
  * @return json
  */
 function loft_faq_autocomplete($node_type, $field, $string = '') {
+  global $loft_faq_type;
   $matches = array();
   if ($string) {
     $suggestions = array();
     switch ($node_type) {
-      case 'loft_faq':
+      case $loft_faq_type:
         switch ($field) {
 
           //find all the matching fieldgroups

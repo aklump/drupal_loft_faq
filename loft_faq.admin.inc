@@ -21,11 +21,23 @@ function loft_faq_admin_settings() {
 
   $form['loft_faq_faq_page_nid'] = array(
     '#type' => 'textfield',
-    '#description' => t("Create a page and then enter it's node id here.  The FAQs will be appended to that page."),
+    '#description' => t("Create a page node and enter it's node id here.  The FAQs will be appended to the content of this node."),
     '#title' => t('FAQ Page NID'),
     '#default_value' => variable_get('loft_faq_faq_page_nid', NULL),
     '#required' => TRUE,
     '#size' => 20,
+  );
+
+  $options = array();
+  foreach (node_type_get_types() as $type) {
+    $options[$type->type] = $type->name;
+  }
+  $form['loft_faq_node_type'] = array(
+    '#type' => 'select',
+    '#title' => t('FAQ Node Type'),
+    '#default_value' => variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE),
+    '#options' => $options,
+    '#description' => t('This node type will be considered the FAQ node type.'),
   );
 
   $form['loft_faq_group_default'] = array(

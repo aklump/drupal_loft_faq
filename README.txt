@@ -11,7 +11,7 @@ INSTALLATION:
 
 CONFIGURATION:
 * Add the NID of the page you want to use as your FAQ
-* Add a link to that page to the appropriate menu
+* Select the node type to use; loft_faq is included in features
 * Create some FAQ entities
 * CSS style as needed
 
