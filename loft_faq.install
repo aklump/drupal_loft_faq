@@ -1,6 +1,4 @@
 <?php
-// $Id$
-
 /**
  * @file
  * Handles installation steps for loft_faq
@@ -22,7 +20,7 @@ function loft_faq_uninstall() {
   }
 
   //delete blocks
-  //db_query("DELETE FROM {block} WHERE `module` = 'loft_faq'");
+  db_query("DELETE FROM {block} WHERE `module` = 'loft_faq'");
 }
 
 /**
@@ -30,7 +28,7 @@ function loft_faq_uninstall() {
  */
 function loft_faq_enable() {
   //message about module settings
-  drupal_set_message(t('You may adjust settings for Frequently Asked Questions by visiting <a href="@url">@url</a>.', array('@url' => url('admin/structure/loft-faq'))));
+  drupal_set_message(t('You may adjust settings for Frequently Asked Questions by visiting <a href="@url">@url</a>.', array('@url' => url(LOFT_FAQ_PATH_ADMIN_SETTINGS))));
 }
 
 /** @} */ //end of group loft_faq

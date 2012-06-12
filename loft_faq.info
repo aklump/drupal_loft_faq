@@ -1,13 +1,8 @@
-; $Id$
-name = Frequently Asked Questions 
+name = Frequently Asked Questions
 description = Provides out-of-box FAQ functionality
 package = In the Loft Studios
 core = 7.x
-version = 7.x-1.0
-
-//all modules must declare files containing classes and interfaces in the .info file
-files[] = loft_faq.module
-files[] = loft_faq.admin.inc
+version = "7.x-dev"
 
 dependencies[] = views
 dependencies[] = features

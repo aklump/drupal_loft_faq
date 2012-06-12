@@ -1,5 +1,3 @@
-/* $Id$ */
-
 SUMMARY: This module provides an FAQ content type (via Features), an FAQ view,
 and the means to embed that view on a node.
 
