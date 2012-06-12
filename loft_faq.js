@@ -39,8 +39,10 @@
           else {
             $answer.show();
           }
-          $answer.toggleClass('collapsed');
-          $question.toggleClass('collapsed');
+          $answer.toggleClass('collapsed')
+          .toggleClass('showing');
+          $question.toggleClass('collapsed')
+          .toggleClass('showing');
           return false;
         });
       });
