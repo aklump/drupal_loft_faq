@@ -1,3 +1,9 @@
+.loft-faq-toc {
+  margin: 2em 0 2em 1em;
+}
+.loft-faq-toc li {
+  list-style: none;
+}
 .loft-faq-top {
   font-size: .75em;
   text-align: right;
@@ -5,7 +11,7 @@
   margin: 1em 0;
 }
 .loft-faq-category-wrapper {
-  margin: 2em 0 0 0;
+  padding: 2em 0 0 0;
   position: relative;
 }
 .loft-faq-processed dt {

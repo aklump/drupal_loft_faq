@@ -80,9 +80,9 @@ function loft_faq_form_alter(&$form, $form_state, $form_id) {
  *   $arg[11] will always be set.
  */
 function loft_faq_help($path, $arg) {
+  $help = '';
   switch ($path) {
     case 'admin/help#loft_faq':
-      $help = '';
       $help .= check_markup(file_get_contents(drupal_get_path('module', 'loft_faq') . '/README.txt'), 'plain_text');
       return $help;
 
@@ -157,6 +157,28 @@ function loft_faq_preprocess_html(&$vars) {
 }
 
 /**
+ * Determine first and last classes
+ *
+ * @param string $key
+ *   A unique id for this batch
+ * @param array
+ *   This is the array of all items to monitor
+ */
+function _loft_faq_get_iteration_classes($key, $array) {
+  static $progress = array();
+  $classes = array();
+  if (empty($progress[$key])) {
+    $progress[$key] = 1;
+    $classes[] = 'first';
+  }
+  if (count($array) == $progress[$key]) {
+    $classes[] = 'last';
+  }
+  ++$progress[$key];
+  return $classes;
+}
+
+/**
  * Implements hook_node_view().
  */
 function loft_faq_node_view($node, $view_mode, $langcode) {
@@ -171,6 +193,7 @@ function loft_faq_node_view($node, $view_mode, $langcode) {
         ? variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)
         : $category;
       $category_safe = check_plain($category);
+      $index = 1;
       if ($nodes = loft_faq_get_faq_by_category($category)) {
         $anchor = loft_faq_css_safe($category);
         $toc[$anchor] = $category_safe;
@@ -186,11 +209,17 @@ function loft_faq_node_view($node, $view_mode, $langcode) {
           $items[] = $item;
         }
       }
+      $classes = _loft_faq_get_iteration_classes('categories', $categories);
+      $classes[] = 'loft-faq-category-wrapper';
+      $classes[] = $anchor;
       $list[] = array(
         '#theme' => 'loft_faq_list',
         '#category' => $category_safe,
         '#anchor' => $anchor,
         '#items' => $items,
+        '#wrapper_attributes' => array(
+          'class' => $classes,
+        ),
       );
     }
     drupal_add_js(drupal_get_path('module', 'loft_faq') . '/loft_faq.js', 'file');
@@ -250,7 +279,7 @@ function loft_faq_theme($existing, $type, $theme, $path) {
       'template' => 'loft_faq-toc',
     ),
     'loft_faq_list' => array(
-      'variables' => array('category' => NULL, 'anchor' => NULL, 'items' => array()),
+      'variables' => array('category' => NULL, 'anchor' => NULL, 'items' => array(), 'wrapper_attributes' => array()),
       'template' => 'loft_faq-list',
     ),
     'loft_faq_item' => array(
