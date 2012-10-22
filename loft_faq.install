@@ -14,7 +14,7 @@ function loft_faq_uninstall() {
 
   //Clean up our entries in the variables table.
   if ($result = db_query("SELECT name FROM {variable} WHERE `name` LIKE 'loft_faq%'")) {
-    foreach($result as $data) {
+    foreach ($result as $data) {
       variable_del($data->name);
     }
   }

@@ -8,7 +8,7 @@
  */
 
 /**
- * Implements hook_loft_faq_get_node_category_alter
+ * Implements hook_loft_faq_get_node_category_alter().
  *
  * Use when using an alternative storage field in the node for the category.
  *
@@ -22,7 +22,7 @@ function hook_loft_faq_get_node_category_alter(&$category, $node) {
 }
 
 /**
- * Implements hook_loft_faq_set_node_category_alter
+ * Implements hook_loft_faq_set_node_category_alter().
  *
  * Use when using an alternative storage field in the node for the category.
  *

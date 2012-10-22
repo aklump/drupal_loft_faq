@@ -11,7 +11,7 @@
  * Form builder. Configure my_module.
  *
  * @ingroup forms
- * @see system_settings_form().
+ * @see system_settings_form()
  */
 
 function loft_faq_admin_settings() {
@@ -59,13 +59,13 @@ function loft_faq_admin_settings() {
 function loft_faq_admin_settings_submit($form, &$form_state) {
 
   if (($nid = $form_state['values']['loft_faq_faq_page_nid']) != $form['#old_nid'] &&
-       ($node = node_load($nid))) {
+      ($node = node_load($nid))) {
 
     $query = db_select('menu_links', 'm');
     $item_exists = $query
-      ->fields('m', array('mlid',))
+      ->fields('m', array('mlid'))
       ->condition('link_path', 'node/' . $nid)
-      ->range(0,1)
+      ->range(0, 1)
       ->countQuery()
       ->execute()
       ->fetchField();
