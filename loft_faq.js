@@ -10,6 +10,21 @@
 
   Drupal.loftFaq = Drupal.loftFaq || {};
 
+  Drupal.loftFaq.getIE = function ()
+  // Returns the version of Windows Internet Explorer or a -1
+  // (indicating the use of another browser).
+  {
+     var rv = -1; // Return value assumes failure.
+     if (navigator.appName == 'Microsoft Internet Explorer')
+     {
+        var ua = navigator.userAgent;
+        var re  = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+        if (re.exec(ua) != null)
+           rv = parseFloat( RegExp.$1 );
+     }
+     return rv;
+  }
+
   /**
    * Core behavior for loft_faq.
    */
@@ -23,9 +38,14 @@
       .once('loft-faq', function(){
         var $list = $(this);
 
-        $list.find('dd.loft-faq-answer')
-        .addClass('collapsed')
-        .hide();
+        // Earlier versions of ie have a problem with the clicking?
+        var ieVersion = Drupal.loftFaq.getIE();
+        if (ieVersion == -1 || ieVersion > 8) {
+          $list.find('dd.loft-faq-answer')
+          .addClass('collapsed')
+          .hide();
+        }
+
         $list.find('dt.loft-faq-question')
         .addClass('collapsed')
         .wrapInner('<a href="#">')
