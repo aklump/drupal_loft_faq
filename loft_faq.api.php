@@ -54,5 +54,30 @@ function hook_loft_faq_item_alter(&$item) {
   $item['#answer'] = array('#markup' => $item['#node']->body['und'][0]['safe_value']);
 }
 
+/**
+ * Implements hook_loft_faq_node_append().
+ *
+ * @return array
+ * - each item is an array of parameters
+ *
+ * @see loft_faq_node_view()
+ */
+function hook_loft_faq_node_append() {
+  return array(
+    array(
+      'nid' => variable_get('loft_faq_faq_page_nid', NULL),
+    ),
+    array(
+      'nid' => 384023,
+      'toc' => FALSE,
+      'title' => t('Mobile App FAQs'),
+      'title_display' => 'invisible',
+      'categories' => array(
+        'OvaGraph Mobile App'
+      ),
+      'not_categories' => array(),
+    )
+  );
+}
 
 /** @} */ //end of group hooks
