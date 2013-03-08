@@ -345,7 +345,7 @@ function loft_faq_form_lfaq_node_form_alter(&$form, $form_state) {
  *        after hook_view(). The format of $node->content is the same as used by Forms
  *        API.
  */
-function loft_faq_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+function loft_faq_nodeapi($node, $op, $a3 = NULL, $a4 = NULL) {
   if ($node->type == 'lfaq') {
     if ($op == 'presave') {
       //for flexibility sake (changing the default group on the fly from admin and
