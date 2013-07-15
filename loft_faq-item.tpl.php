@@ -13,5 +13,8 @@
  * @{
  */
 ?>
-<dt class="loft-faq-question"><?php print render($question) ?></dt>
-<dd class="loft-faq-answer"><?php print render($answer) ?></dd>
+<div class="loft-faq-item contextual-links-region">
+  <?php print render($links); ?>
+  <dt class="loft-faq-question"><?php print render($question) ?></dt>
+  <dd class="loft-faq-answer"><?php print render($answer) ?></dd>
+</div>

@@ -311,6 +311,17 @@ function loft_faq_node_view($node, $view_mode, $langcode) {
  */
 function loft_faq_preprocess_loft_faq_item(&$vars) {
   $node = $vars['elements']['#node'];
+
+  //menu_contextual_links()
+  $vars['links'] = array(
+    '#type' => 'contextual_links',
+    // Each key is the name of the implementing module, and each value is an
+    // array that forms the function arguments for menu_contextual_links()
+    '#contextual_links' => array(
+      'loft_faq' => array('node/' . $node->nid, array()),
+    ),
+  );
+
   $vars['question'] = array('#markup' => check_plain($node->title));
   $vars['answer'] = field_view_value('node', $node, 'body', $node->body['und'][0]);
 }
@@ -489,7 +500,7 @@ function loft_faq_node_load($nodes, $types) {
  * @return string
  */
 function loft_faq_get_node_category($node) {
-  $category = empty($node->field_group['und'][0]['value']) ? NULL : $node->field_group['und'][0]['value'];
+  $category = empty($node->field_group['und'][0]['value']) ? NULL : trim($node->field_group['und'][0]['value']);
   drupal_alter('loft_faq_get_node_category', $category, $node);
   return $category;
 }
@@ -505,7 +516,7 @@ function loft_faq_get_node_category($node) {
 function loft_faq_set_node_category($node, $category) {
   $node->field_group['und'][0]['value'] = $category;
   if (array_key_exists('safe_value', $node->field_group['und'][0])) {
-    $node->field_group['und'][0]['safe_value'] = check_plain($category);
+    $node->field_group['und'][0]['safe_value'] = trim(check_plain($category));
   }
   drupal_alter('loft_faq_set_category', $category, $node);
   return $category;
