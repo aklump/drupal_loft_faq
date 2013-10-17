@@ -31,9 +31,6 @@
   Drupal.behaviors.loftFaq = {
     attach: function (context, settings) {
 
-      /**
-       * Add Scrolling Anchors
-       */
       $('dl.loft-faq-category')
       .once('loft-faq', function(){
         var $list = $(this);
@@ -67,37 +64,7 @@
         });
       });
 
-      $(".loft-faq-toc a, a.loft-faq-top").click(function() {
-
-        //how far from the screen top do you want the item to land after scrolling
-        var distanceFromTop = 50;
-        var speed = 100;
-
-        //get the name of the anchor
-        var anchor = $(this).attr('href').split('#');
-
-        //get the y point of the element to scroll to
-        var destination;
-        if ($('div.loft-faq-category-wrapper.' + anchor[1]).length) {
-          destination = $('div.loft-faq-category-wrapper.' + anchor[1]).offset().top;
-        }
-        else {
-          destination = $('.loft-faq-toc').offset().top;
-        }
-
-        //do the scrolling
-        $("html:not(:animated),body:not(:animated)")
-        .animate(
-          {
-            scrollTop: destination - distanceFromTop
-          },
-          {
-            duration: speed,
-            easing: "swing"
-          }
-        );
-        return false;
-      });
+      $("dl.loft-faq-category, .loft-faq-toc a, a.loft-faq-top").scrollingAnchors();
     }
   }
 
