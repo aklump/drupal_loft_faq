@@ -2,7 +2,7 @@ name = Frequently Asked Questions
 description = Provides out-of-box FAQ functionality
 package = In the Loft Studios
 core = 7.x
-version = 7.x-1.5
+version = 7.x-1.6-rc1
 
 dependencies[] = views
 dependencies[] = features
