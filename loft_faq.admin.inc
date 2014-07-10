@@ -22,7 +22,7 @@ function loft_faq_admin_settings() {
   $form['loft_faq_faq_page_nid'] = array(
     '#type' => 'textfield',
     '#description' => t("Create a page node and enter it's node id here.  The FAQs will be appended to the content of this node."),
-    '#title' => t('FAQ Page NID'),
+    '#title' => t('FAQ page NID'),
     '#default_value' => variable_get('loft_faq_faq_page_nid', NULL),
     '#required' => TRUE,
     '#size' => 20,
@@ -34,16 +34,18 @@ function loft_faq_admin_settings() {
   }
   $form['loft_faq_node_type'] = array(
     '#type' => 'select',
-    '#title' => t('FAQ Node Type'),
+    '#title' => t('FAQ node type'),
     '#default_value' => variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE),
     '#options' => $options,
     '#description' => t('This node type will be considered the FAQ node type.'),
   );
 
+  $original = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
   $form['loft_faq_group_default'] = array(
     '#type' => 'textfield',
-    '#title' => t('Default Group for Questions'),
-    '#default_value' => variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT),
+    '#title' => t('Default group for questions'),
+    '#description' => t('Changing this field value <em>after content has been assigned "%default"</em>, will result in said content automatically being updated to the new value.', array('%default' => $original)),
+    '#default_value' => $original,
   );
 
   $form['#submit'][] = 'loft_faq_admin_settings_submit';
@@ -57,6 +59,27 @@ function loft_faq_admin_settings() {
  * @see loft_faq_admin_settings()
  */
 function loft_faq_admin_settings_submit($form, &$form_state) {
+
+  // If the default type gets changed we are going to update the database directly.
+  $original = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
+  if (($new = $form_state['values']['loft_faq_group_default']) !== $original) {
+
+    // Load and alter all nodes with the original category to the new one.
+    $need_update = loft_faq_get_faq_by_category($original, TRUE);
+    $updated = 0;
+    foreach ($need_update as $node) {
+      loft_faq_set_node_category($node, $new);
+      node_save($node);
+      ++$updated;
+    }
+    if ($updated) {
+      drupal_set_message(t("We updated the category for @count from %old to %new.", array(
+        '@count' => format_plural($updated, '1 faq', '@count faqs'),
+        '%old' => $original, 
+        '%new' => $new, 
+      )), 'status', FALSE);
+    }
+  }
 
   if (($nid = $form_state['values']['loft_faq_faq_page_nid']) != $form['#old_nid'] &&
       ($node = node_load($nid))) {

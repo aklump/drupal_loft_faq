@@ -391,28 +391,17 @@ function loft_faq_get_faq_by_category($category, $reset = FALSE) {
   if (!array_key_exists($category, $faq)) {
     $faq[$category] = array();
     $node_type = variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE);
+    
+    $args = array(
+      'loft_faq',
+      'default',
+      $node_type,
+    );
     if ($category) {
-      $view_category = $category;
-      if ($category == variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)) {
-        $view_category = '';
-      }
-    }
-    if ($view_category) {
-      $result = (array) views_get_view_result(
-        'loft_faq',
-        'default',
-        $node_type,
-        $view_category
-      );
-    }
-    else {
-      $result = (array) views_get_view_result(
-        'loft_faq',
-        'default',
-        $node_type
-      );
+      $args[] = $category;
     }
 
+    $result = (array) call_user_func_array('views_get_view_result', $args);
     foreach ($result as $data) {
       $faq[$category][$data->nid] = node_load($data->nid);
     }
@@ -482,23 +471,6 @@ function loft_faq_css_safe($input, $flatten = FALSE) {
  */
 function loft_faq_form_loft_faq_node_form_alter(&$form, $form_state) {
   $form['field_group']['und'][0]['value']['#autocomplete_path'] = LOFT_FAQ_AUTOCOMPLETE . '/loft_faq/group';
-}
-
-/**
- * Implements hook_node_presave().
- */
-function loft_faq_node_presave($node) {
-
-  global $_loft_faq_type_;
-  if ($node->type == $_loft_faq_type_) {
-    //for flexibility sake (changing the default group on the fly from admin and
-    //quick updates) we don't want to actually record teh default group to the
-    //db, we'll leave it blank and insert the default on load, etc.
-    if (($default = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT))
-        && $default == loft_faq_get_node_category($node)) {
-      loft_faq_set_node_category($node, NULL);
-    }
-  }
 }
 
 /**
