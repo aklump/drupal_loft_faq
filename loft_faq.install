@@ -31,4 +31,29 @@ function loft_faq_enable() {
   drupal_set_message(t('You may adjust settings for Frequently Asked Questions by visiting <a href="@url">@url</a>.', array('@url' => url(LOFT_FAQ_PATH_ADMIN_SETTINGS))));
 }
 
-/** @} */ //end of group loft_faq
+/**
+ * Upgrade fields that have blank category to the default value.
+ */
+function loft_faq_update_7100(&$sandbox) {
+  
+  // Load and alter all nodes with a blank category.
+  if (($nodes = loft_faq_get_faq_by_category('', TRUE))) {
+    $category = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
+    $updated = 0;
+    foreach ($nodes as $node) {
+      if (empty($node->field_group['und'][0]['value'])) {
+        loft_faq_set_node_category($node, $category);
+        node_save($node);
+        ++$updated;
+      }
+    }
+    if ($updated) {
+      return t("The stored value for @count was set to %new.", array(
+        '@count' => format_plural($updated, '1 faq', '@count faqs'),
+        '%new' => $category, 
+      ));
+    }  
+  }
+  
+  return t('Nothing to update.');
+}
