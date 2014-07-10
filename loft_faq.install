@@ -57,3 +57,29 @@ function loft_faq_update_7100(&$sandbox) {
   
   return t('Nothing to update.');
 }
+
+/**
+ * Update the field default value for field_group.
+ */
+function loft_faq_update_7101(&$sandbox) {
+  $bundle_name = variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE);
+  if (!($settings = field_read_instance('node', 'field_group', $bundle_name))) {
+    return t('Nothing to update.');
+  }
+
+  $settings['description'] = str_replace(' If unsure enter "General".', '', $settings['description']);
+  if (empty($settings['default_value'][0]['value'])) {
+    $settings['default_value'][0]['value'] = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
+  }
+  $instance = array(
+    'entity_type' => 'node',
+    'bundle' => $bundle_name,
+    'field_name' => 'field_group',
+  ) + $settings;
+
+  try {
+    field_update_instance($instance);  
+  } catch (Exception $e) {
+    throw new DrupalUpdateException($e->getMessage());
+  }
+}
