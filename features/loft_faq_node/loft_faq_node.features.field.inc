@@ -119,9 +119,9 @@ function loft_faq_node_field_default_fields() {
     ),
     'field_instance' => array(
       'bundle' => 'loft_faq',
-      'default_value' => NULL,
+      'default_value' => 'General',
       'deleted' => '0',
-      'description' => 'Enter a grouping field for this QA. If unsure enter "General".',
+      'description' => 'Enter a grouping field for this QA.',
       'display' => array(
         'default' => array(
           'label' => 'inline',

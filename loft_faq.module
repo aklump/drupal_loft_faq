@@ -202,11 +202,9 @@ function loft_faq_node_view($node, $view_mode, $langcode) {
 
     $config += array(
       'nid' => NULL,
-      'toc' => TRUE,
       'categories' => array(),
       'title' => '',
       'not_categories' => array(),
-      'title_display' => 'before',
     );
 
     // We need to append to this node
@@ -245,6 +243,21 @@ function loft_faq_node_view($node, $view_mode, $langcode) {
       };
 
       $toc = $list = array();
+
+
+      // We only are going to show title if we have more than one category.
+      // as well as the toc.
+      $default_title_display = 'hidden';
+      $toc_display = FALSE;
+      if (count($categories) > 1) {
+        $toc_display = TRUE;
+        $default_title_display = 'before';
+      }
+      $config += array(
+        'toc' => $toc_display,
+        'title_display' => $default_title_display,
+      );
+
       foreach ($categories as $category) {
         $category = empty($category)
           ? variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)
@@ -470,7 +483,11 @@ function loft_faq_css_safe($input, $flatten = FALSE) {
  * Implements hook_form_alter().
  */
 function loft_faq_form_loft_faq_node_form_alter(&$form, $form_state) {
-  $form['field_group']['und'][0]['value']['#autocomplete_path'] = LOFT_FAQ_AUTOCOMPLETE . '/loft_faq/group';
+  $group = &$form['field_group']['und'][0];
+  $group['#description'] = $group['value']['#description'] .= ' ' . t('If unsure enter %default.', array(
+    '%default' => variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)
+  ));
+  $group['value']['#autocomplete_path'] = LOFT_FAQ_AUTOCOMPLETE . '/loft_faq/group';
 }
 
 /**
