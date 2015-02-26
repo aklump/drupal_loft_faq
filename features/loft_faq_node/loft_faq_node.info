@@ -12,5 +12,4 @@ features[views_view][] = "loft_faq"
 name = "Loft FAQ Entity"
 package = In the Loft Studios
 php = "5.2.4"
-project = "loft_faq_node"
 version = "7.x-1.0"
