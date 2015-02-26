@@ -17,6 +17,12 @@ define('LOFT_FAQ_AUTOCOMPLETE', 'ovacue/autocomplete');
 define('LOFT_FAQ_GROUP_DEFAULT', 'General');
 
 /**
+ * @var LOFT_FAQ_SET_DEFAULT
+ *
+ * Default value for admin setting.
+ */
+define('LOFT_FAQ_SET_DEFAULT', TRUE);
+/**
  * @var LOFT_FAQ_NODE_TYPE
  *
  * The default node type to use as an faq
@@ -483,11 +489,13 @@ function loft_faq_css_safe($input, $flatten = FALSE) {
  * Implements hook_form_alter().
  */
 function loft_faq_form_loft_faq_node_form_alter(&$form, $form_state) {
-  $group = &$form['field_group']['und'][0];
-  $group['#description'] = $group['value']['#description'] .= ' ' . t('If unsure enter %default.', array(
-    '%default' => variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)
-  ));
+  $group                                = &$form['field_group']['und'][0];
+  $default_group                        = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
+  $group['#description'] = $group['value']['#description'] .= ' ' . t('If unsure enter %default.', array('%default' => $default_group));
   $group['value']['#autocomplete_path'] = LOFT_FAQ_AUTOCOMPLETE . '/loft_faq/group';
+  if (variable_get('loft_faq_set_default', LOFT_FAQ_SET_DEFAULT)) {
+    $group['value']['#default_value'] = $default_group;
+  }
 }
 
 /**

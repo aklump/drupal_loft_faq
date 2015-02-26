@@ -48,6 +48,13 @@ function loft_faq_admin_settings() {
     '#default_value' => $original,
   );
 
+  $form['loft_faq_set_default'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Prefill group for new FAQs?'),
+    '#default_value' => variable_get('loft_faq_set_default', LOFT_FAQ_SET_DEFAULT),
+    '#description' => t('Check this box and the default group will be already entered in the group box on the FAQ node form.'),
+  );
+
   $form['#submit'][] = 'loft_faq_admin_settings_submit';
 
   return system_settings_form($form);

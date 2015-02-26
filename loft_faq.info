@@ -5,5 +5,4 @@ core = 7.x
 version = "7.x-1.6-rc8"
 
 dependencies[] = views
-dependencies[] = features
 dependencies[] = loft_faq_node
