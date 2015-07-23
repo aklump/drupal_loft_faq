@@ -456,6 +456,8 @@ function loft_faq_get_faq_categories($reset = FALSE) {
       }
     }
     asort($categories);
+
+    drupal_alter('loft_faq_categories', $categories);
   }
 
   return $categories;

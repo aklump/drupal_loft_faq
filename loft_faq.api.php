@@ -80,4 +80,11 @@ function hook_loft_faq_node_append() {
   );
 }
 
-/** @} */ //end of group hooks
+/**
+ * Implements hook_loft_faq_categories_alter().
+ *
+ * Allows modules to alter the category list, such as order.
+ */
+function hook_loft_faq_categories_alter(&$categories) {
+  // do something like reorder the categories...
+}
