@@ -65,16 +65,6 @@
       });
 
       $("dl.loft-faq-category, .loft-faq-toc a, a.loft-faq-top").scrollingAnchors();
-
-      Drupal.loftFaq.topLinks();
-    }
-  };
-
-  Drupal.loftFaq.topLinks = function(context) {
-    // Hide our return to top when the page is not long.
-    var $links    = $('a.loft-faq-top', context);
-    if ($("body").height() <= $(window).height()) {
-      $links.hide();
     }
   };
 

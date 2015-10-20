@@ -3,6 +3,10 @@
  * @file
  * Template file for category listings
  *
+ * $total_faqs int Total items in all categories.
+ * $total_category_faqs Total items in this category
+ * $total_fags_by_category array Totals by category keys
+ * $categories array All categories
  * $anchor - the name attribute for the anchor tag; correlates with the toc
  * $category - the santized category name
  * $items - an array of renderable arrays holding the items
@@ -29,7 +33,7 @@
   <?php if ($title_display == 'after') :?>
     <h2 class="view-title loft-faq-category"><?php print $category ?></h2>
   <?php endif; ?>
-  <?php if ($has_toc) :?>
+  <?php if ($total_faqs > 10 && $has_toc) :?>
     <a class="loft-faq-top" href="#loft-faq-toc"><?php print t('See Categories') ?></a>
   <?php endif; ?>
 

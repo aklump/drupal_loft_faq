@@ -268,33 +268,52 @@ function loft_faq_theme($existing, $type, $theme, $path) {
  *
  * They are ordered by weight field
  *
- * @param string $category
+ * @param NULL|string $category
  *
  * @return array
- * - an array of nodes keyed by nid
+ * - an array of nodes keyed by nid when $category is not null.
+ * - when it's null you will get the following:
+ *   - #count
+ *   - #categories
+ *   - #category_counts array of ints
+ *   - category1, 2...
  */
-function loft_faq_get_faq_by_category($category, $reset = FALSE) {
-  global $_loft_faq_type_;
-  $faq = &drupal_static(__FUNCTION__, array());
-  if (!array_key_exists($category, $faq)) {
-    $faq[$category] = array();
-    $node_type = variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE);
-    
-    $args = array(
+function loft_faq_get_faq_by_category($category = NULL, $reset = FALSE) {
+  static $drupal_static_fast;
+  if (!isset($drupal_static_fast)) {
+    $drupal_static_fast['faqs'] = &drupal_static(__FUNCTION__, NULL);
+  }
+  $faqs = &$drupal_static_fast['faqs'];
+  if ($reset || !isset($faqs)) {
+
+    $view_args_base = array(
       'loft_faq',
       'default',
-      $node_type,
+      variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE),
     );
-    if ($category) {
-      $args[] = $category;
-    }
+    $faqs = array(
+      '#count' => 0,
+      '#categories' => loft_faq_get_faq_categories($reset),
+      '#category_counts' => array(),
+    );
 
-    $result = (array) call_user_func_array('views_get_view_result', $args);
-    foreach ($result as $data) {
-      $faq[$category][$data->nid] = node_load($data->nid);
+    foreach ($faqs['#categories'] as $_category) {
+      $faqs['#category_counts'][$_category] = 0;
+      $faqs[$_category] = array();
+      $view_args       = array_merge($view_args_base, array($_category));
+      $result          = (array) call_user_func_array('views_get_view_result', $view_args);
+      foreach ($result as $data) {
+        $faqs[$_category][$data->nid] = node_load($data->nid);
+        $faqs['#category_counts'][$_category]++;
+      }
+      $faqs['#count'] += count($faqs[$_category]);
     }
   }
-  return $faq[$category];
+  
+  if (!isset($category)) {
+    return $faqs;
+  }
+  return isset($faqs[$category]) ? $faqs[$category] : array();
 }
 
 /**
@@ -665,11 +684,16 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
           $index = 1;
           $anchor = loft_faq_css_safe($category);
           $items = array();
-          if ($nodes = loft_faq_get_faq_by_category($category)) {
+          $faqs_data = loft_faq_get_faq_by_category();
+          if (isset($faqs_data[$category]) && ($nodes = $faqs_data[$category])) {
             $toc[$anchor] = $category_safe;
             foreach ($nodes as $faq_node) {
               $item = array(
                 '#theme' => 'loft_faq_item',
+                '#total_faqs' => $faqs_data['#count'],
+                '#total_category_faqs' => count($nodes),
+                '#total_fags_by_category' => $faqs_data['#category_counts'],
+                '#categories' => $faqs_data['#categories'],
                 '#category' => $category_safe,
                 '#anchor' => $anchor,
                 '#node' => $faq_node,
@@ -684,6 +708,10 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
               $category = empty($config['title']) ? $category_safe : $config['title'];
               $list[$category] = array(
                 '#theme' => 'loft_faq_list',
+                '#total_faqs' => $faqs_data['#count'],
+                '#total_category_faqs' => count($items),
+                '#total_fags_by_category' => $faqs_data['#category_counts'],
+                '#categories' => $faqs_data['#categories'],
                 '#category' => $category,
                 '#title_display' => $config['title_display'],
                 '#has_toc' => $config['toc'],
@@ -707,6 +735,8 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
         if ($config['toc']) {
           $content[$hash]['toc'] = array(
             '#theme' => 'loft_faq_toc',
+            '#total_faqs' => $faqs_data['#count'],
+            '#total_fags_by_category' => $faqs_data['#category_counts'],
             '#items' => $toc,
             '#weight' => ++$weight,
           );
@@ -717,7 +747,6 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
       }
     }
   }
-
   $node->content['loft_faq'] = $content[$hash];
 }
 
