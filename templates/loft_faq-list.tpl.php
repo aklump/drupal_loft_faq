@@ -30,7 +30,7 @@
     <h2 class="view-title loft-faq-category"><?php print $category ?></h2>
   <?php endif; ?>
   <?php if ($has_toc) :?>
-    <a class="loft-faq-top" href="#loft-faq-toc"><?php print t('Back to Index') ?></a>
+    <a class="loft-faq-top" href="#loft-faq-toc"><?php print t('See Categories') ?></a>
   <?php endif; ?>
 
 </div><!-- /.loft-faq-category-wrapper -->

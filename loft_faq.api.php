@@ -87,4 +87,5 @@ function hook_loft_faq_node_append() {
  */
 function hook_loft_faq_categories_alter(&$categories) {
   // do something like reorder the categories...
+  $categories = array_unique(array_merge(array('Products', 'Orders'), $categories));
 }

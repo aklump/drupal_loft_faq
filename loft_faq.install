@@ -7,20 +7,17 @@
  * @{
  */
 
-/*
+/**
  * Implements hook_uninstall().
  */
 function loft_faq_uninstall() {
-
-  //Clean up our entries in the variables table.
-  if ($result = db_query("SELECT name FROM {variable} WHERE `name` LIKE 'loft_faq%'")) {
-    foreach ($result as $data) {
-      variable_del($data->name);
-    }
+  $vars = db_select('variable', 'v')
+    ->fields('v', array('name'))
+    ->condition('name', 'loft_faq%', 'LIKE')
+    ->execute()->fetchCol();
+  foreach ($vars as $var) {
+    variable_del($var);
   }
-
-  //delete blocks
-  db_query("DELETE FROM {block} WHERE `module` = 'loft_faq'");
 }
 
 /**

@@ -18,21 +18,21 @@
      if (navigator.appName == 'Microsoft Internet Explorer')
      {
         var ua = navigator.userAgent;
-        var re  = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
-        if (re.exec(ua) != null)
-           rv = parseFloat( RegExp.$1 );
+        var re = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+        if (re.exec(ua) !== null) {
+         rv = parseFloat( RegExp.$1 );
+        }
      }
      return rv;
-  }
+  };
 
   /**
    * Core behavior for loft_faq.
    */
   Drupal.behaviors.loftFaq = {
-    attach: function (context, settings) {
+    attach: function (context) {
 
-      $('dl.loft-faq-category')
-      .once('loft-faq', function(){
+      $('dl.loft-faq-category', context).once('loft-faq', function(){
         var $list = $(this);
 
         // Earlier versions of ie have a problem with the clicking?
@@ -65,9 +65,17 @@
       });
 
       $("dl.loft-faq-category, .loft-faq-toc a, a.loft-faq-top").scrollingAnchors();
+
+      Drupal.loftFaq.topLinks();
     }
-  }
+  };
+
+  Drupal.loftFaq.topLinks = function(context) {
+    // Hide our return to top when the page is not long.
+    var $links    = $('a.loft-faq-top', context);
+    if ($("body").height() <= $(window).height()) {
+      $links.hide();
+    }
+  };
 
 })(jQuery);
-
-/** @} */ //end of group loft_faq

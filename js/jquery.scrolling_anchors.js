@@ -29,18 +29,18 @@
       $jumpLink.click(function() {
 
         // Get the name of the anchor
-        var anchor = $jumpLink.attr('href').split('#');
-        anchor = anchor[1];
+        var anchor      = $jumpLink.attr('href').split('#');
+        anchor          = anchor[1];
+        var $target     = $('#' + anchor);
         var destination = null;
 
         // We don't need a top anchor for #top
-        if (anchor == 'top') {
+        if (anchor === 'top') {
           destination = 0;
         }
 
         // Otherwise look for element with anchor as name attr
         else {
-          var $target = $('#' + anchor);
           if (!$target.length) {
             $target = $('a[name="' + anchor + '"]');
           }
@@ -65,7 +65,7 @@
         }
 
       });
-    })
+    });
     return $(this);
-  }
+  };
 })( jQuery );

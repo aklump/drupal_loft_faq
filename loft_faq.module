@@ -44,10 +44,7 @@ define('LOFT_FAQ_PATH_ADMIN_SETTINGS', 'admin/structure/loft-faq');
  * @return array or bool
  */
 function _loft_faq_core_nodes($nid = NULL) {
-  $core_nids = array();
-  if (variable_get('loft_faq_faq_page_nid', NULL)) {
-    $core_nids[] = variable_get('loft_faq_faq_page_nid', NULL);
-  }
+  $core_nids = loft_faq_get_pages_info('ids');
   if ($nid) {
     return in_array($nid, $core_nids);
   }
@@ -93,7 +90,7 @@ function loft_faq_help($path, $arg) {
       return $help;
 
     case 'node/%/edit':
-      if ($arg[1] == variable_get('loft_faq_faq_page_nid', NULL)) {
+      if (in_array($arg[1], loft_faq_get_pages_info('ids'))) {
         $help = '<p>' . t('The <strong>Frequently Asked Questions</strong> are appended to the content of this node. <a href="@url">Adjust settings.</a>', array('@url' => url(LOFT_FAQ_PATH_ADMIN_SETTINGS))) . '</p>';
       }
       return $help;
@@ -105,12 +102,13 @@ function loft_faq_help($path, $arg) {
  */
 function loft_faq_init() {
 
-  // Identify the node type
+  // Identify the node type for each faq.
   global $_loft_faq_type_;
   $_loft_faq_type_ = variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE);
 
-  if ($_GET['q'] != LOFT_FAQ_PATH_ADMIN_SETTINGS &&
-      !($nid = variable_get('loft_faq_faq_page_nid', NULL))) {
+  if (user_access('administer loft_faq')
+    && $_GET['q'] != LOFT_FAQ_PATH_ADMIN_SETTINGS
+    && !loft_faq_get_pages_info()) {
     drupal_set_message(t('Please define which node to use as your FAQ page by visiting <a href="@url">@url</a>, or disable the Frequently Asked Questions module.', array('@url' => url(LOFT_FAQ_PATH_ADMIN_SETTINGS))), 'warning', FALSE);
   }
 }
@@ -157,7 +155,8 @@ function loft_faq_menu() {
  * Implementats hook_preprocess_html().
  */
 function loft_faq_preprocess_html(&$vars) {
-  if (arg(0) == 'node' && ($nid = arg(1)) && $nid == variable_get('loft_faq_faq_page_nid', NULL)) {
+  if (($node = menu_get_object())
+    && in_array($node->nid, loft_faq_get_pages_info('ids'))) {
     $vars['classes_array'][] = 'loft-faq-page';
   }
 }
@@ -196,136 +195,6 @@ function loft_faq_loft_faq_node_append() {
 }
 
 /**
- * Implements hook_node_view().
- */
-function loft_faq_node_view($node, $view_mode, $langcode) {
-
-  // Determine which nids to append faqs to
-  $append = module_invoke_all('loft_faq_node_append');
-
-  // Cycle through to see if this node is there
-  foreach ($append as $config) {
-
-    $config += array(
-      'nid' => NULL,
-      'categories' => array(),
-      'title' => '',
-      'not_categories' => array(),
-    );
-
-    // We need to append to this node
-    if ($config['nid'] == $node->nid) {
-
-      // Add a link
-      if (user_access('create loft_faq content')) {
-        $node->content['links']['loft_faq_add_faq'] = array(
-          '#links' => array(
-            array(
-              'title' => 'Add Another FAQ',
-              'href' => 'node/add/loft-faq',
-              'query' => drupal_get_destination(),
-              'attributes' => array('class' => 'loft-faq-add-link'),
-            ),
-          ),
-        );
-      }
-
-      // Try to load categories...
-      if (!($categories = loft_faq_get_faq_categories())
-
-          // Filter categories
-          || (array_key_exists('categories', $config)
-              && is_array($config['categories'])
-              && count($config['categories'])
-              && !($categories = array_intersect($config['categories'], $categories)))
-
-          // Remove not_categories
-          || (array_key_exists('not_categories', $config)
-              && is_array($config['not_categories'])
-              && count($config['not_categories'])
-              && !($categories = array_diff($categories, $config['not_categories'])))){
-        // The filter removed all categories so we're done here
-        return;
-      };
-
-      $toc = $list = array();
-
-
-      // We only are going to show title if we have more than one category.
-      // as well as the toc.
-      $default_title_display = 'hidden';
-      $toc_display = FALSE;
-      if (count($categories) > 1) {
-        $toc_display = TRUE;
-        $default_title_display = 'before';
-      }
-      $config += array(
-        'toc' => $toc_display,
-        'title_display' => $default_title_display,
-      );
-
-      foreach ($categories as $category) {
-        $category = empty($category)
-          ? variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)
-          : $category;
-        $category_safe = check_plain($category);
-        $index = 1;
-        $anchor = loft_faq_css_safe($category);
-        $items = array();
-        if ($nodes = loft_faq_get_faq_by_category($category)) {
-          $toc[$anchor] = $category_safe;
-          foreach ($nodes as $faq_node) {
-            $item = array(
-              '#theme' => 'loft_faq_item',
-              '#category' => $category_safe,
-              '#anchor' => $anchor,
-              '#node' => $faq_node,
-            );
-
-            //@todo Can't figure this out yet ...
-            //$item['#contextual_links']['loft_faq'] = array('node', array($faq_node->nid, 'edit'));
-
-            drupal_alter('loft_faq_item', $item);
-            $items[] = $item;
-          }
-          if ($items) {
-            $classes = _loft_faq_get_iteration_classes('categories', $categories);
-            $classes[] = 'loft-faq-category-wrapper';
-            $classes[] = $anchor;
-            $list[] = array(
-              '#theme' => 'loft_faq_list',
-              '#category' => empty($config['title']) ? $category_safe : $config['title'],
-              '#title_display' => $config['title_display'],
-              '#has_toc' => $config['toc'],
-              '#anchor' => $anchor,
-              '#items' => $items,
-              '#wrapper_attributes' => array(
-                'class' => $classes,
-              ),
-            );
-          }
-        }
-      }
-
-      $weight = $node->content['body']['#weight'];
-
-      // Append the TOC?
-      if ($config['toc']) {
-        $node->content['loft_faq_toc'] = array(
-          '#theme' => 'loft_faq_toc',
-          '#items' => $toc,
-          '#weight' => ++$weight,
-        );
-      }
-
-      $node->content['loft_faq_list'] = array('#weight' => ++$weight) + $list;
-
-      $node->content['loft_faq_list']['#attached']['library'][] = array('loft_faq', 'loft_faq');
-    }
-  }
-}
-
-/**
  * Implements hook_library().
  */
 function loft_faq_library() {
@@ -334,8 +203,8 @@ function loft_faq_library() {
       'title' => 'Loft FAQ',
       'version' => '1.0',
       'js' => array(
-        drupal_get_path('module', 'loft_faq') . '/js/jquery.scrolling_anchors.js' => array(),
-        drupal_get_path('module', 'loft_faq') . '/js/loft_faq.js' => array(),
+        drupal_get_path('module', 'loft_faq') . '/js/jquery.scrolling_anchors.min.js' => array(),
+        drupal_get_path('module', 'loft_faq') . '/js/loft_faq.min.js' => array(),
       ),
       'css' => array(
         drupal_get_path('module', 'loft_faq') . '/css/loft_faq.css' => array(
@@ -617,4 +486,263 @@ function loft_faq_autocomplete($node_type, $field, $string = '') {
   }
   drupal_json_output($suggestions);
   exit();
+}
+
+/**
+ * Gets info about the faq node.
+ *
+ * @param  string $key One of:
+ *   - NULL
+ *   - config
+ *   - ids
+ *   - entities
+ *   - entity_types
+ *   - bundle_types
+ *
+ * @return array
+ *   When key is ... the return is ...
+ *   - NULL ... array(array($entity, $id, $entity_type, $bundle_type))
+ *   - config ... keyed by id, array of config options
+ *   - ids ... array($id, $id, $id ...)
+ *   - entities ... array($entity, $entity, ...)
+ *   - entity_types ... array( {{ all entity types}} )
+ *   - bundle_types ... array ( {{ all bundle type }} )
+ */
+function loft_faq_get_pages_info($key = NULL) {
+  static $drupal_static_fast;
+  if (!isset($drupal_static_fast)) {
+    $drupal_static_fast['info'] = &drupal_static(__FUNCTION__, NULL);
+  }
+  $info = &$drupal_static_fast['info'];
+  if (!isset($info)) {
+
+    $append = module_invoke_all('loft_faq_node_append');
+
+    // Cycle through to see if this node is there
+    $nodes = $bundles = $items = array();
+    foreach ($append as $config) {
+      $node = $id = $bundle_type = NULL;
+      $config += array(
+        'nid' => NULL,
+        'categories' => array(),
+        'title' => '',
+        'not_categories' => array(),
+      );
+
+      if (($node = node_load($config['nid']))) {
+        $info['config'][$node->nid]        = $config;
+        $info['nodes'][$node->nid]         = $node;
+        $info['bundle_types'][$node->type] = $node->type;
+        $info['items'][]                   = array($node, $node->nid, 'node', $node->type, $config);
+      }
+    }
+  }
+
+  switch ($key) {
+    case 'ids':
+      return array_keys($info['nodes']);
+    case 'nodes':
+      return $info['nodes'];
+    case 'entity_types':
+      return array('node');
+    case 'bundle_types':
+      return $info['bundle_types'];
+    case 'config':
+      return $info['config'];  
+    case NULL:
+      return $info['items'];
+    default:
+      throw new \InvalidArgumentException("Invalid key $key.");
+  }
+  
+  return $info;
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function loft_faq_field_extra_fields() {
+  $entities = loft_faq_get_pages_info('entity_types');
+  $bundles  = loft_faq_get_pages_info('bundle_types');
+
+  foreach ($entities as $entity_type) {
+    foreach ($bundles as $bundle_type) {
+      $extra[$entity_type][$bundle_type]['display'] = array(
+        'loft_faq_extra_field_category_list' => array(
+          'label' => t('FAQ: Category List'),
+          'weight' => 0,
+        ),
+        'loft_faq_extra_field_questions' => array(
+          'label' => t('FAQ: Questions'),
+          'weight' => 0,
+        ),
+      );
+    }
+  }
+
+  return $extra;
+}
+
+
+/**
+ * Adds a new element to $node->content, $node->content['loft_faq']
+ *
+ * @param object $node
+ * @param string $view_mode
+ * @param string $langcode
+ */
+function loft_faq_build_content($node, $view_mode, $langcode) {
+  static $drupal_static_fast;
+  if (!isset($drupal_static_fast)) {
+    $drupal_static_fast['content'] = &drupal_static(__FUNCTION__, NULL);
+  }
+  $content   = &$drupal_static_fast['content'];
+  
+  $hash_args = func_get_args();
+  unset($hash_args[0]->content);
+  $hash      = md5(json_encode($hash_args));
+
+  if (!isset($content[$hash])) {
+    // Cycle through to see if this node is there
+    foreach (loft_faq_get_pages_info('config') as $config) {
+
+      // We need to append to this node
+      if ($config['nid'] == $node->nid) {
+
+        // Add a link
+        if (user_access('create loft_faq content') || user_access('administer loft_faq')) {
+          $node->content['links']['loft_faq_add_faq'] = array(
+            '#links' => array(
+              array(
+                'title' => 'Add Another FAQ',
+                'href' => 'node/add/loft-faq',
+                'query' => drupal_get_destination(),
+                'attributes' => array('class' => 'loft-faq-add-link'),
+              ),
+            ),
+          );
+        }
+
+        // Try to load categories...
+        if (!($categories = loft_faq_get_faq_categories())
+
+            // Filter categories
+            || (array_key_exists('categories', $config)
+                && is_array($config['categories'])
+                && count($config['categories'])
+                && !($categories = array_intersect($config['categories'], $categories)))
+
+            // Remove not_categories
+            || (array_key_exists('not_categories', $config)
+                && is_array($config['not_categories'])
+                && count($config['not_categories'])
+                && !($categories = array_diff($categories, $config['not_categories'])))){
+          // The filter removed all categories so we're done here
+          return;
+        };
+
+        $toc = $list = array();
+
+
+        // We only are going to show title if we have more than one category.
+        // as well as the toc.
+        $default_title_display = 'hidden';
+        $toc_display = FALSE;
+        if (count($categories) > 1) {
+          $toc_display = TRUE;
+          $default_title_display = 'before';
+        }
+        $config += array(
+          'toc' => $toc_display,
+          'title_display' => $default_title_display,
+        );
+
+        foreach ($categories as $category) {
+          $category = empty($category)
+            ? variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT)
+            : $category;
+          $category_safe = check_plain($category);
+          $index = 1;
+          $anchor = loft_faq_css_safe($category);
+          $items = array();
+          if ($nodes = loft_faq_get_faq_by_category($category)) {
+            $toc[$anchor] = $category_safe;
+            foreach ($nodes as $faq_node) {
+              $item = array(
+                '#theme' => 'loft_faq_item',
+                '#category' => $category_safe,
+                '#anchor' => $anchor,
+                '#node' => $faq_node,
+              );
+              drupal_alter('loft_faq_item', $item);
+              $items[] = $item;
+            }
+            if ($items) {
+              $classes = _loft_faq_get_iteration_classes('categories', $categories);
+              $classes[] = 'loft-faq-category-wrapper';
+              $classes[] = $anchor;
+              $category = empty($config['title']) ? $category_safe : $config['title'];
+              $list[$category] = array(
+                '#theme' => 'loft_faq_list',
+                '#category' => $category,
+                '#title_display' => $config['title_display'],
+                '#has_toc' => $config['toc'],
+                '#anchor' => $anchor,
+                '#items' => $items,
+                '#wrapper_attributes' => array(
+                  'class' => $classes,
+                ),
+              );
+            }
+          }
+        }
+
+        $weight = isset($node->content['body']) ? $node->content['body']['#weight']: 0;
+
+        $content[$hash]  = array(
+          '#type' => 'container',
+        );
+
+        // Append the TOC?
+        if ($config['toc']) {
+          $content[$hash]['toc'] = array(
+            '#theme' => 'loft_faq_toc',
+            '#items' => $toc,
+            '#weight' => ++$weight,
+          );
+        }
+
+        $content[$hash]['list'] = $list;
+        $content[$hash]['list']['#attached']['library'][] = array('loft_faq', 'loft_faq');
+      }
+    }
+  }
+
+  $node->content['loft_faq'] = $content[$hash];
+}
+
+/**
+ * Implements hook_entity_view().
+ */
+function loft_faq_entity_view($entity, $type, $view_mode, $langcode) {
+  list($entity_id) = entity_extract_ids($type, $entity);
+
+  if (in_array($entity_id, loft_faq_get_pages_info('ids'))) {
+    $info              = entity_get_info($type);
+    $bundle_type       = empty($info['entity keys']['bundle']) ? NULL : $entity->{$info['entity keys']['bundle']};
+    $extra_fields_info = field_info_extra_fields($type, $bundle_type, 'display');
+    
+    // Important to clone this here so our hashing in loft_faq_build_content works correctly.
+    $node              = clone $entity;
+
+    if (!empty($extra_fields_info['loft_faq_extra_field_category_list']['display'][$view_mode]['visible'])) {
+      loft_faq_build_content($node, $view_mode, $langcode);
+      $entity->content['loft_faq_extra_field_category_list'] = $node->content['loft_faq']['toc'];
+    }
+
+    if (!empty($extra_fields_info['loft_faq_extra_field_questions']['display'][$view_mode]['visible'])) {
+      loft_faq_build_content($node, $view_mode, $langcode);
+      $entity->content['loft_faq_extra_field_questions']     = $node->content['loft_faq']['list'];
+    }
+  }
 }
