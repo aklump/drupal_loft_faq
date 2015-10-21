@@ -242,17 +242,25 @@ function loft_faq_preprocess_loft_faq_item(&$vars) {
 function loft_faq_theme($existing, $type, $theme, $path) {
   return array(
     'loft_faq_toc' => array(
-      'variables' => array('items' => array()),
+      'variables' => array(
+        'items' => array(),
+        'total_faqs' => 0,
+        'total_fags_by_category' => array(),
+      ),
       'template' => 'templates/loft_faq-toc',
     ),
     'loft_faq_list' => array(
       'variables' => array(
-        'has_toc' => TRUE,
-        'category' => NULL,
-        'title_display' => 'before',
         'anchor' => NULL,
+        'category' => NULL,
         'items' => array(),
-        'wrapper_attributes' => array()
+        'has_toc' => TRUE,
+        'title_display' => 'before',
+        'wrapper_attributes' => array(),
+        'total_faqs' => 0,
+        'total_category_faqs' => 0,
+        'total_fags_by_category' => array(),
+        'categories' => array(),
       ),
       'template' => 'templates/loft_faq-list',
     ),
@@ -701,27 +709,26 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
               drupal_alter('loft_faq_item', $item);
               $items[] = $item;
             }
-            if ($items) {
-              $classes = _loft_faq_get_iteration_classes('categories', $categories);
-              $classes[] = 'loft-faq-category-wrapper';
-              $classes[] = $anchor;
-              $category = empty($config['title']) ? $category_safe : $config['title'];
-              $list[$category] = array(
-                '#theme' => 'loft_faq_list',
-                '#total_faqs' => $faqs_data['#count'],
-                '#total_category_faqs' => count($items),
-                '#total_fags_by_category' => $faqs_data['#category_counts'],
-                '#categories' => $faqs_data['#categories'],
-                '#category' => $category,
-                '#title_display' => $config['title_display'],
-                '#has_toc' => $config['toc'],
-                '#anchor' => $anchor,
-                '#items' => $items,
-                '#wrapper_attributes' => array(
-                  'class' => $classes,
-                ),
-              );
-            }
+
+            // This is the list of items in this category.
+            $category = empty($config['title']) ? $category_safe : $config['title'];
+            $list[$category] = array(
+              '#theme' => 'loft_faq_list',
+              '#total_faqs' => $faqs_data['#count'],
+              '#total_category_faqs' => count($items),
+              '#total_fags_by_category' => $faqs_data['#category_counts'],
+              '#categories' => $faqs_data['#categories'],
+              '#category' => $category,
+              '#title_display' => $config['title_display'],
+              '#has_toc' => $config['toc'],
+              '#anchor' => $anchor,
+              '#items' => $items,
+            );
+
+            $classes = _loft_faq_get_iteration_classes('categories', $categories);
+            $classes[] = 'loft-faq-category-wrapper';
+            $classes[] = $anchor;
+            $list[$category]['#wrapper_attributes']['class'] = $classes;
           }
         }
 
@@ -751,6 +758,27 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
 }
 
 /**
+ * Checks if a view_mode is enabled for a bundle, if not, returns default.
+ *
+ * This should be used when pulling settings from field_info_extra_fields().
+ *
+ * @param  string $entity_type
+ * @param  string $bundle_type
+ * @param  string $view_mode
+ *
+ * @return string $view_mode|'default'
+ *
+ * @see field_info_extra_fields()
+ * @see hook_field_extra_fields
+ */
+function _loft_faq_get_real_view_mode($entity_type, $bundle_type, $view_mode) {
+  $entity_info = entity_get_info($entity_type, $bundle_type);
+  $view_modes  = $entity_info['view modes'];
+
+  return !empty($view_modes[$view_mode]['custom_settings']) ? $view_mode : 'default';
+}
+
+/**
  * Implements hook_entity_view().
  */
 function loft_faq_entity_view($entity, $type, $view_mode, $langcode) {
@@ -760,17 +788,28 @@ function loft_faq_entity_view($entity, $type, $view_mode, $langcode) {
     $info              = entity_get_info($type);
     $bundle_type       = empty($info['entity keys']['bundle']) ? NULL : $entity->{$info['entity keys']['bundle']};
     $extra_fields_info = field_info_extra_fields($type, $bundle_type, 'display');
+    $view_mode         = _loft_faq_get_real_view_mode($type, $bundle_type, $view_mode);
     
     // Important to clone this here so our hashing in loft_faq_build_content works correctly.
     $node              = clone $entity;
 
+    $show_toc = FALSE;
     if (!empty($extra_fields_info['loft_faq_extra_field_category_list']['display'][$view_mode]['visible'])) {
+      $show_toc = TRUE;
       loft_faq_build_content($node, $view_mode, $langcode);
       $entity->content['loft_faq_extra_field_category_list'] = $node->content['loft_faq']['toc'];
     }
 
     if (!empty($extra_fields_info['loft_faq_extra_field_questions']['display'][$view_mode]['visible'])) {
       loft_faq_build_content($node, $view_mode, $langcode);
+
+      // Disable toc if not shown based on extra fields info.
+      if (!$show_toc) {
+        foreach ($node->content['loft_faq']['list'] as &$category) {
+          $category['#has_toc'] = $show_toc;
+        }
+      }
+
       $entity->content['loft_faq_extra_field_questions']     = $node->content['loft_faq']['list'];
     }
   }

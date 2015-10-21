@@ -11,7 +11,7 @@
  * $category - the santized category name
  * $items - an array of renderable arrays holding the items
  * $has_toc - bool if the toc is being displayed
- * $attributes - array
+ * $wrapper_attributes - array
  *
  * @ingroup loft_faq Frequently Asked Questions
  * @{
