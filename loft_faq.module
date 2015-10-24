@@ -8,7 +8,7 @@
  */
 
 // autocomplete path for this module
-define('LOFT_FAQ_AUTOCOMPLETE', 'ovacue/autocomplete');
+define('LOFT_FAQ_AUTOCOMPLETE', 'loft-faq/autocomplete');
 
 /**
  * @var LOFT_FAQ_GROUP_DEFAULT
@@ -55,8 +55,27 @@ function _loft_faq_core_nodes($nid = NULL) {
  * Implements hook_form_alter().
  */
 function loft_faq_form_alter(&$form, $form_state, $form_id) {
-  if (!empty($form['#node_edit_form']) && _loft_faq_core_nodes($form['nid']['#value'])) {
-    unset($form['actions']['delete']);
+  global $_loft_faq_type_;
+  $is_node_form = !empty($form['#node_edit_form']);
+
+  if ($is_node_form) {
+    
+    // Remove the ability to delete the FAQs pages.
+    if(_loft_faq_core_nodes($form['nid']['#value'])) {
+      unset($form['actions']['delete']);
+    }
+
+    // Add in the default value and the autocomplete for groups on faq nodes.
+    if ($form['#node']->type === $_loft_faq_type_) {
+      $group         = &$form['field_group']['und'][0];
+      $default_group = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
+      $group['#description'] = ($group['value']['#description'] .= ' ' . t('If unsure enter %default.', array('%default' => $default_group)));
+      $group['value']['#autocomplete_path'] = LOFT_FAQ_AUTOCOMPLETE . '/' . $_loft_faq_type_ . '/group';
+
+      if (empty($group['value']['#default_value']) && variable_get('loft_faq_set_default', LOFT_FAQ_SET_DEFAULT)) {
+        $group['value']['#default_value'] = $default_group;
+      }
+    }  
   }
 }
 
@@ -129,6 +148,7 @@ function loft_faq_permission() {
  * Implements hook_menu().
  */
 function loft_faq_menu() {
+  global $_loft_faq_type_;
   $items = array();
 
   $items[LOFT_FAQ_PATH_ADMIN_SETTINGS] = array(
@@ -141,12 +161,17 @@ function loft_faq_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items[LOFT_FAQ_AUTOCOMPLETE] = array(
-    'title' => 'Ovacue autocomplete',
-    'page callback' => 'loft_faq_autocomplete',
-    'access arguments' => array('administer content'),
-    'type' => MENU_CALLBACK,
-  );
+  foreach (loft_faq_get_pages_info('bundle_types') as $bundle_type) {
+    $items[LOFT_FAQ_AUTOCOMPLETE . "/$_loft_faq_type_"] = array(
+      'title' => "autocomplete for loft_faq: $_loft_faq_type_ nodes",
+      'page callback' => 'loft_faq_autocomplete',
+      'page arguments' => array($_loft_faq_type_),
+      // All this path does is expose public categories so the access
+      // can be always true.
+      'access callback' => 'true',
+      'type' => MENU_CALLBACK,
+    );    
+  }
 
   return $items;
 }
@@ -387,13 +412,7 @@ function loft_faq_css_safe($input, $flatten = FALSE) {
  * Implements hook_form_alter().
  */
 function loft_faq_form_loft_faq_node_form_alter(&$form, $form_state) {
-  $group                                = &$form['field_group']['und'][0];
-  $default_group                        = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
-  $group['#description'] = $group['value']['#description'] .= ' ' . t('If unsure enter %default.', array('%default' => $default_group));
-  $group['value']['#autocomplete_path'] = LOFT_FAQ_AUTOCOMPLETE . '/loft_faq/group';
-  if (variable_get('loft_faq_set_default', LOFT_FAQ_SET_DEFAULT)) {
-    $group['value']['#default_value'] = $default_group;
-  }
+
 }
 
 /**
@@ -512,7 +531,7 @@ function loft_faq_autocomplete($node_type, $field, $string = '') {
     }
   }
   drupal_json_output($suggestions);
-  exit();
+  drupal_exit();
 }
 
 /**
@@ -636,20 +655,6 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
       // We need to append to this node
       if ($config['nid'] == $node->nid) {
 
-        // Add a link
-        if (user_access('create loft_faq content') || user_access('administer loft_faq')) {
-          $node->content['links']['loft_faq_add_faq'] = array(
-            '#links' => array(
-              array(
-                'title' => 'Add Another FAQ',
-                'href' => 'node/add/loft-faq',
-                'query' => drupal_get_destination(),
-                'attributes' => array('class' => 'loft-faq-add-link'),
-              ),
-            ),
-          );
-        }
-
         // Try to load categories...
         if (!($categories = loft_faq_get_faq_categories())
 
@@ -732,8 +737,6 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
           }
         }
 
-        $weight = isset($node->content['body']) ? $node->content['body']['#weight']: 0;
-
         $content[$hash]  = array(
           '#type' => 'container',
         );
@@ -745,7 +748,7 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
             '#total_faqs' => $faqs_data['#count'],
             '#total_fags_by_category' => $faqs_data['#category_counts'],
             '#items' => $toc,
-            '#weight' => ++$weight,
+            '#weight' => isset($node->content['body']) ? $node->content['body']['#weight'] + 1 : 0,
           );
         }
 
@@ -814,3 +817,23 @@ function loft_faq_entity_view($entity, $type, $view_mode, $langcode) {
     }
   }
 }
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function loft_faq_entity_view_alter(&$build, $entity_type) {
+  if ($entity_type === 'node'
+    && in_array($build['#node']->nid, loft_faq_get_pages_info('ids'))
+    && (user_access('create loft_faq content') || user_access('administer loft_faq'))) {
+      $build['links']['loft_faq'] = array(
+        '#links' => array(
+          array(
+            'title' => 'Add Another FAQ',
+            'href' => 'node/add/loft-faq',
+            'query' => drupal_get_destination(),
+            'attributes' => array('class' => 'loft-faq-add-link'),
+          ),
+        ),
+      );
+    }
+  }
