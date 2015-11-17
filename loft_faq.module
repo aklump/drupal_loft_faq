@@ -72,34 +72,9 @@ function loft_faq_form_alter(&$form, $form_state, $form_id) {
       unset($form['actions']['delete']);
     }
 
-    // Add in the default value and the autocomplete for groups on faq nodes.
     if ($form['#node']->type === $_loft_faq_type_) {
-      $group_field = variable_get('loft_faq_group_fieldname', LOFT_FAQ_GROUP_FIELDNAME);
-      
-      if (!isset($form[$group_field]['und'][0])) {
-        $form[$group_field]['und'][0]['value'] = NULL;
-        $form[$group_field]['und'][0]['value']['#description'] = '';
-      }
-      $group         = &$form[$group_field]['und'][0];
-
-      $info        = loft_faq_get_pages_info('config');
-      $display_nid = isset($_GET['loft_faq_display']) ? $_GET['loft_faq_display'] : NULL;
-      $info        = isset($info[$display_nid]) ? $info[$display_nid] : array();
-      
-      $default_group = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
-      $default_group = isset($info['default_category']) ? $info['default_category'] : $default_group;
-
-      $group['#description'] = ($group['value']['#description'] .= ' ' . t('If unsure enter %default.', array('%default' => $default_group)));
-      $group['value']['#autocomplete_path'] = LOFT_FAQ_AUTOCOMPLETE . '/' . $_loft_faq_type_ . '/group';
-      
-      if (empty($group['value']['#default_value']) && variable_get('loft_faq_set_default', 
-        LOFT_FAQ_SET_DEFAULT)) {
-        $group['value']['#default_value'] = $default_group;
-      }
-
-      if (array_key_exists('hide_category_input', $info)) {
-        $form[$group_field]['#access'] = $info['hide_category_input'];  
-      }
+      module_load_include('inc', 'loft_faq', 'includes/loft_faq.admin');
+      _loft_faq_faq_form_alter($form);
     }  
   }
 }
@@ -193,8 +168,9 @@ function loft_faq_menu() {
       'page arguments' => array($_loft_faq_type_),
       // All this path does is expose public categories so the access
       // can be always true.
-      'access callback' => 'true',
+      'access callback' => TRUE,
       'type' => MENU_CALLBACK,
+      'file' => 'includes/loft_faq.admin.inc',
     );    
   }
 
@@ -266,25 +242,7 @@ function loft_faq_library() {
   );
 }
 
-/**
- * Implements hook_preprocess_loft_faq_item().
- */
-function loft_faq_preprocess_loft_faq_item(&$vars) {
-  $node = $vars['elements']['#node'];
 
-  //menu_contextual_links()
-  $vars['links'] = array(
-    '#type' => 'contextual_links',
-    // Each key is the name of the implementing module, and each value is an
-    // array that forms the function arguments for menu_contextual_links()
-    '#contextual_links' => array(
-      'loft_faq' => array('node/' . $node->nid, array()),
-    ),
-  );
-
-  $vars['question'] = array('#markup' => check_plain($node->title));
-  $vars['answer'] = field_view_value('node', $node, 'body', $node->body['und'][0]);
-}
 
 /**
  * Implements hook_theme().
@@ -297,6 +255,7 @@ function loft_faq_theme($existing, $type, $theme, $path) {
         'total_faqs' => 0,
         'total_fags_by_category' => array(),
       ),
+      'file' => 'includes/loft_faq.theme.inc',
       'template' => 'templates/loft_faq-toc',
     ),
     'loft_faq_list' => array(
@@ -312,10 +271,12 @@ function loft_faq_theme($existing, $type, $theme, $path) {
         'total_fags_by_category' => array(),
         'categories' => array(),
       ),
+      'file' => 'includes/loft_faq.theme.inc',
       'template' => 'templates/loft_faq-list',
     ),
     'loft_faq_item' => array(
       'render element' => 'elements',
+      'file' => 'includes/loft_faq.theme.inc',
       'template' => 'templates/loft_faq-item',
     ),
   );
@@ -414,30 +375,6 @@ function loft_faq_get_faq_categories($reset = FALSE) {
 }
 
 /**
- * Make a css safe class or id
- *
- * @param string or array $input
- *   The string will be made css safe; array values will be made css safe
- * @param bool $flatten
- *   Optional.  Set to TRUE to flatten arrays into space separated strings
- *
- * @return string or array
- */
-function loft_faq_css_safe($input, $flatten = FALSE) {
-  if (is_array($input)) {
-    $function = __FUNCTION__;
-    foreach ($input as $key => $value) {
-      $input[$key] = $function($value);
-    }
-    return $flatten ? trim(implode(' ', $input)) : $input;
-  }
-  elseif (is_string($input)) {
-    return trim(drupal_strtolower(preg_replace('/[\W_]+/', '-', $input)), '-');
-  }
-  return $input;
-}
-
-/**
  * Implements hook_node_load().
  */
 function loft_faq_node_load($nodes, $types) {
@@ -520,42 +457,6 @@ function loft_faq_sort_views_views() {
       'sort_field' => 'field_sort',
     ),
   );
-}
-
-/**
- * Return the list of autocomplete suggestions
- *
- * @param string $node_type
- * @param string $field
- * @param string $string
- *   The user input
- *
- * @return json
- */
-function loft_faq_autocomplete($node_type, $field, $string = '') {
-  global $_loft_faq_type_;
-  $matches = array();
-  if ($string) {
-    $suggestions = array();
-    switch ($node_type) {
-      case $_loft_faq_type_:
-        switch ($field) {
-
-          //find all the matching fieldgroups
-          case 'group':
-            foreach (loft_faq_get_faq_categories() as $category) {
-              //the string is anywhere in the choice
-              if (stristr($category, $string) !== FALSE) {
-                $suggestions[$category] = $category;
-              }
-            }
-            break;
-        }
-        break;
-    }
-  }
-  drupal_json_output($suggestions);
-  drupal_exit();
 }
 
 /**
@@ -720,6 +621,7 @@ function loft_faq_build_content($node, $view_mode, $langcode) {
           'toc' => $toc_display,
           'title_display' => $default_title_display,
         );
+        module_load_include('inc', 'loft_faq', 'includes/loft_faq.theme');
 
         foreach ($categories as $category) {
           $category = empty($category)
