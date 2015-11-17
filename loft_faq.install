@@ -35,10 +35,11 @@ function loft_faq_update_7100(&$sandbox) {
   
   // Load and alter all nodes with a blank category.
   if (($nodes = loft_faq_get_faq_by_category('', TRUE))) {
+    $group_field = variable_get('loft_faq_group_fieldname', LOFT_FAQ_GROUP_FIELDNAME);
     $category = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
     $updated = 0;
     foreach ($nodes as $node) {
-      if (empty($node->field_group['und'][0]['value'])) {
+      if (empty($node->{$group_field}['und'][0]['value'])) {
         loft_faq_set_node_category($node, $category);
         node_save($node);
         ++$updated;
@@ -56,11 +57,12 @@ function loft_faq_update_7100(&$sandbox) {
 }
 
 /**
- * Update the field default value for field_group.
+ * Update the field default value for the group field.
  */
 function loft_faq_update_7101(&$sandbox) {
+  $group_field = variable_get('loft_faq_group_fieldname', LOFT_FAQ_GROUP_FIELDNAME);
   $bundle_name = variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE);
-  if (!($settings = field_read_instance('node', 'field_group', $bundle_name))) {
+  if (!($settings = field_read_instance('node', $group_field, $bundle_name))) {
     return t('Nothing to update.');
   }
 
@@ -71,7 +73,7 @@ function loft_faq_update_7101(&$sandbox) {
   $instance = array(
     'entity_type' => 'node',
     'bundle' => $bundle_name,
-    'field_name' => 'field_group',
+    'field_name' => $group_field,
   ) + $settings;
 
   try {

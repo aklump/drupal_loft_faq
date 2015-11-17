@@ -20,6 +20,10 @@ and the means to embed that view on a node.
 * CSS style as needed
 
 
+## ALTERNATE CONFIGURATION
+* To have multiple FAQ pages take a look at hook_loft_faq_node_append.
+
+
 ## DEVELOPERS
 * Take a look at `loft_faq.api.php` for advanced config.
 
@@ -27,6 +31,7 @@ and the means to embed that view on a node.
 ## USAGE
 * When the designated page is loaded, the FAQ index and view will be appended to
   the page.
+
 
 ## CONTACT
 * **In the Loft Studios**

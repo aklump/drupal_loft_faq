@@ -17,44 +17,75 @@
 function loft_faq_admin_settings() {
   $form = array();
 
-  $form['#old_nid'] = variable_get('loft_faq_faq_page_nid', NULL);
-
-  $form['loft_faq_faq_page_nid'] = array(
-    '#type' => 'textfield',
-    '#description' => t("Create a page node and enter it's node id here.  The FAQs will be appended to the content of this node."),
-    '#title' => t('FAQ page NID'),
-    '#default_value' => variable_get('loft_faq_faq_page_nid', NULL),
-    '#required' => TRUE,
-    '#size' => 20,
+  $form['settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Settings'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
   );
 
   $options = array();
   foreach (node_type_get_types() as $type) {
     $options[$type->type] = $type->name;
   }
-  $form['loft_faq_node_type'] = array(
+  $form['settings']['loft_faq_node_type'] = array(
     '#type' => 'select',
     '#title' => t('FAQ node type'),
     '#default_value' => variable_get('loft_faq_node_type', LOFT_FAQ_NODE_TYPE),
     '#options' => $options,
-    '#description' => t('This node type will be considered the FAQ node type.'),
+    '#description' => t('This node type will be used as the FAQ node type.'),
+    '#required' => TRUE,
+  );
+
+  $field = variable_get('loft_faq_group_fieldname', LOFT_FAQ_GROUP_FIELDNAME);
+  $form['settings']['loft_faq_group_fieldname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Category Fieldname on the FAQ node'),
+    '#description' => t('What is the field that is used to store the category?'),
+    '#default_value' => $field,
+    '#required' => TRUE,
   );
 
   $original = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
-  $form['loft_faq_group_default'] = array(
+  $form['settings']['loft_faq_group_default'] = array(
     '#type' => 'textfield',
     '#title' => t('Default group for questions'),
     '#description' => t('Changing this field value <em>after content has been assigned "%default"</em>, will result in said content automatically being updated to the new value.', array('%default' => $original)),
     '#default_value' => $original,
   );
 
-  $form['loft_faq_set_default'] = array(
+  $form['settings']['loft_faq_set_default'] = array(
     '#type' => 'checkbox',
     '#title' => t('Prefill group for new FAQs?'),
     '#default_value' => variable_get('loft_faq_set_default', LOFT_FAQ_SET_DEFAULT),
     '#description' => t('Check this box and the default group will be already entered in the group box on the FAQ node form.'),
   );
 
+  $form['#old_nid'] = variable_get('loft_faq_faq_page_nid', NULL);
+  
+  // This will be set if the nids that are in the system come from a hook
+  // implementation, if they do not then we will allow the use to enter a page
+  // nid.
+  $nids = empty($form['#old_nid']) && ($nids = loft_faq_get_pages_info('ids')) ? $nids : array();
+
+  if (empty($nids)) {
+    $form['pages'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Page(s)'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+      '#access' => empty($nids),
+    );
+    $form['pages']['loft_faq_faq_page_nid'] = array(
+      '#type' => 'textfield',
+      '#description' => t("Create a page node and enter it's node id here.  The FAQs will be appended to the content of this node."),
+      '#title' => t('FAQ page NID'),
+      '#default_value' => variable_get('loft_faq_faq_page_nid', NULL),
+      '#required' => FALSE,
+      '#size' => 20,
+    );
+  }
+  
   $form['#submit'][] = 'loft_faq_admin_settings_submit';
 
   return system_settings_form($form);

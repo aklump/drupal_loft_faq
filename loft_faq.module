@@ -17,6 +17,12 @@ define('LOFT_FAQ_AUTOCOMPLETE', 'loft-faq/autocomplete');
 define('LOFT_FAQ_GROUP_DEFAULT', 'General');
 
 /**
+ * @var LOFT_FAQ_GROUP_FIELDNAME
+ *
+ * The fieldname that contains the group string.
+ */
+define('LOFT_FAQ_GROUP_FIELDNAME', 'field_group');
+/**
  * @var LOFT_FAQ_SET_DEFAULT
  *
  * Default value for admin setting.
@@ -59,21 +65,40 @@ function loft_faq_form_alter(&$form, $form_state, $form_id) {
   $is_node_form = !empty($form['#node_edit_form']);
 
   if ($is_node_form) {
+    $nid = $form['nid']['#value'];
     
     // Remove the ability to delete the FAQs pages.
-    if(_loft_faq_core_nodes($form['nid']['#value'])) {
+    if(_loft_faq_core_nodes($nid)) {
       unset($form['actions']['delete']);
     }
 
     // Add in the default value and the autocomplete for groups on faq nodes.
     if ($form['#node']->type === $_loft_faq_type_) {
-      $group         = &$form['field_group']['und'][0];
+      $group_field = variable_get('loft_faq_group_fieldname', LOFT_FAQ_GROUP_FIELDNAME);
+      
+      if (!isset($form[$group_field]['und'][0])) {
+        $form[$group_field]['und'][0]['value'] = NULL;
+        $form[$group_field]['und'][0]['value']['#description'] = '';
+      }
+      $group         = &$form[$group_field]['und'][0];
+
+      $info        = loft_faq_get_pages_info('config');
+      $display_nid = isset($_GET['loft_faq_display']) ? $_GET['loft_faq_display'] : NULL;
+      $info        = isset($info[$display_nid]) ? $info[$display_nid] : array();
+      
       $default_group = variable_get('loft_faq_group_default', LOFT_FAQ_GROUP_DEFAULT);
+      $default_group = isset($info['default_category']) ? $info['default_category'] : $default_group;
+
       $group['#description'] = ($group['value']['#description'] .= ' ' . t('If unsure enter %default.', array('%default' => $default_group)));
       $group['value']['#autocomplete_path'] = LOFT_FAQ_AUTOCOMPLETE . '/' . $_loft_faq_type_ . '/group';
-
-      if (empty($group['value']['#default_value']) && variable_get('loft_faq_set_default', LOFT_FAQ_SET_DEFAULT)) {
+      
+      if (empty($group['value']['#default_value']) && variable_get('loft_faq_set_default', 
+        LOFT_FAQ_SET_DEFAULT)) {
         $group['value']['#default_value'] = $default_group;
+      }
+
+      if (array_key_exists('hide_category_input', $info)) {
+        $form[$group_field]['#access'] = $info['hide_category_input'];  
       }
     }  
   }
@@ -332,12 +357,16 @@ function loft_faq_get_faq_by_category($category = NULL, $reset = FALSE) {
 
     foreach ($faqs['#categories'] as $_category) {
       $faqs['#category_counts'][$_category] = 0;
-      $faqs[$_category] = array();
-      $view_args       = array_merge($view_args_base, array($_category));
-      $result          = (array) call_user_func_array('views_get_view_result', $view_args);
+      $faqs[$_category]                     = array();
+      $view_args                            = array_merge($view_args_base, array($_category));
+      $result                               = (array) call_user_func_array('views_get_view_result', $view_args);
       foreach ($result as $data) {
-        $faqs[$_category][$data->nid] = node_load($data->nid);
-        $faqs['#category_counts'][$_category]++;
+        $node          = node_load($data->nid);
+        $node_category = loft_faq_get_node_category($node);
+        if ($node_category === $_category) {
+          $faqs[$_category][$node->nid] = $node;
+          $faqs['#category_counts'][$_category]++;
+        }
       }
       $faqs['#count'] += count($faqs[$_category]);
     }
@@ -409,13 +438,6 @@ function loft_faq_css_safe($input, $flatten = FALSE) {
 }
 
 /**
- * Implements hook_form_alter().
- */
-function loft_faq_form_loft_faq_node_form_alter(&$form, $form_state) {
-
-}
-
-/**
  * Implements hook_node_load().
  */
 function loft_faq_node_load($nodes, $types) {
@@ -439,7 +461,8 @@ function loft_faq_node_load($nodes, $types) {
  * @return string
  */
 function loft_faq_get_node_category($node) {
-  $category = empty($node->field_group['und'][0]['value']) ? NULL : trim($node->field_group['und'][0]['value']);
+  $group_field = variable_get('loft_faq_group_fieldname', LOFT_FAQ_GROUP_FIELDNAME);
+  $category    = empty($node->{$group_field}['und'][0]['value']) ? NULL : trim($node->{$group_field}['und'][0]['value']);
   drupal_alter('loft_faq_get_node_category', $category, $node);
   return $category;
 }
@@ -453,9 +476,10 @@ function loft_faq_get_node_category($node) {
  * @return string
  */
 function loft_faq_set_node_category($node, $category) {
-  $node->field_group['und'][0]['value'] = $category;
-  if (array_key_exists('safe_value', $node->field_group['und'][0])) {
-    $node->field_group['und'][0]['safe_value'] = trim(check_plain($category));
+  $group_field = variable_get('loft_faq_group_fieldname', LOFT_FAQ_GROUP_FIELDNAME);
+  $node->{$group_field}['und'][0]['value'] = $category;
+  if (array_key_exists('safe_value', $node->{$group_field}['und'][0])) {
+    $node->{$group_field}['und'][0]['safe_value'] = trim(check_plain($category));
   }
   drupal_alter('loft_faq_set_category', $category, $node);
   return $category;
@@ -561,7 +585,7 @@ function loft_faq_get_pages_info($key = NULL) {
   }
   $info = &$drupal_static_fast['info'];
   if (!isset($info)) {
-
+    $info   = array();
     $append = module_invoke_all('loft_faq_node_append');
 
     // Cycle through to see if this node is there
@@ -582,6 +606,14 @@ function loft_faq_get_pages_info($key = NULL) {
         $info['items'][]                   = array($node, $node->nid, 'node', $node->type, $config);
       }
     }
+
+    // Take care of defaults
+    $info += array(
+      'nodes' => array(),
+      'bundle_types' => array(),
+      'config' => array(),
+      'items' => array(),
+    );
   }
 
   switch ($key) {
@@ -795,7 +827,7 @@ function loft_faq_entity_view($entity, $type, $view_mode, $langcode) {
     
     // Important to clone this here so our hashing in loft_faq_build_content works correctly.
     $node              = clone $entity;
-
+    
     $show_toc = FALSE;
     if (!empty($extra_fields_info['loft_faq_extra_field_category_list']['display'][$view_mode]['visible'])) {
       $show_toc = TRUE;
@@ -807,13 +839,13 @@ function loft_faq_entity_view($entity, $type, $view_mode, $langcode) {
       loft_faq_build_content($node, $view_mode, $langcode);
 
       // Disable toc if not shown based on extra fields info.
-      if (!$show_toc) {
+      if (!$show_toc && isset($node->content['loft_faq']['list'])) {
         foreach ($node->content['loft_faq']['list'] as &$category) {
           $category['#has_toc'] = $show_toc;
         }
       }
 
-      $entity->content['loft_faq_extra_field_questions']     = $node->content['loft_faq']['list'];
+      $entity->content['loft_faq_extra_field_questions'] = isset($node->content['loft_faq']['list']) ? $node->content['loft_faq']['list'] : array();
     }
   }
 }
@@ -825,13 +857,18 @@ function loft_faq_entity_view_alter(&$build, $entity_type) {
   if ($entity_type === 'node'
     && in_array($build['#node']->nid, loft_faq_get_pages_info('ids'))
     && (user_access('create loft_faq content') || user_access('administer loft_faq'))) {
+      
+      $info  = loft_faq_get_pages_info('config');
+      $info  = $info[$build['#node']->nid];
+      $query = drupal_get_destination();
+      $query['loft_faq_display'] = $build['#node']->nid;
       $build['links']['loft_faq'] = array(
         '#links' => array(
           array(
-            'title' => 'Add Another FAQ',
+            'title' => 'Add another FAQ',
             'href' => 'node/add/loft-faq',
-            'query' => drupal_get_destination(),
-            'attributes' => array('class' => 'loft-faq-add-link'),
+            'query' => $query,
+            'attributes' => array('class' => array('loft-faq-add-link')),
           ),
         ),
       );

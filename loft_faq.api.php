@@ -10,7 +10,9 @@
 /**
  * Implements hook_loft_faq_get_node_category_alter().
  *
- * Use when using an alternative storage field in the node for the category.
+ * Use when using an alternative storage method for the category.
+ *
+ * It may be much easier to just set the var: loft_faq_group_fieldname instead.
  *
  * @param string &$category
  * @param object $node
@@ -24,8 +26,10 @@ function hook_loft_faq_get_node_category_alter(&$category, $node) {
 /**
  * Implements hook_loft_faq_set_node_category_alter().
  *
- * Use when using an alternative storage field in the node for the category.
+ * Use when using an alternative storage method for the category.
  *
+ * It may be much easier to just set the var: loft_faq_group_fieldname instead.
+ * 
  * @param object $node
  * @param string $category
  *
@@ -69,13 +73,22 @@ function hook_loft_faq_node_append() {
     ),
     array(
       'nid' => 384023,
+
+      // The Table of Contents
       'toc' => FALSE,
       'title' => t('Mobile App FAQs'),
       'title_display' => 'invisible',
+      
+      // The categories
       'categories' => array(
-        'OvaGraph Mobile App'
+        'Consumers'
       ),
       'not_categories' => array(),
+
+      // The node edit form, when $_GET['loft_faq_display'] is set for context.
+      // This should be one of categories above.
+      'default_category' => 'Consumers',
+      'hide_category_input' => FALSE,      
     )
   );
 }
