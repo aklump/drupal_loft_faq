@@ -4,21 +4,26 @@
  * Template file for category listings
  *
  * $total_faqs int Total items in all categories.
- * $total_category_faqs Total items in this category
- * $total_fags_by_category array Totals by category keys
- * $categories array All categories
- * $anchor - the name attribute for the anchor tag; correlates with the toc
- * $category - the santized category name
- * $items - an array of renderable arrays holding the items
- * $has_toc - bool if the toc is being displayed
+ * $total_category_faqs Total items in this category or if not category is
+ *   given, the same as total_faqs.
+ * $total_fags_by_category array Totals by category keys.
+ * $categories array All categories.
+ * $anchor - the name attribute for the anchor tag; correlates with the toc.
+ * $category - the santized category name.
+ * $items - an array of renderable arrays holding the items.
+ * $has_toc - bool if the toc is being displayed.
  * $wrapper_attributes - array
+ * $title_display - string
+ *   - none: Category will not print out as title
+ *   - before
+ *   - invisible
  *
- * @ingroup loft_faq Frequently Asked Questions
+ * @ingroup loft_faq
  * @{
  */
 ?>
 <a name="<?php print $anchor ?>"></a>
-<div <?php print drupal_attributes($wrapper_attributes) ?>>
+<div<?php print drupal_attributes($wrapper_attributes) ?>>
   <?php if ($title_display == 'before') :?>
     <h2 class="view-title loft-faq-category"><?php print $category ?></h2>
   <?php endif; ?>

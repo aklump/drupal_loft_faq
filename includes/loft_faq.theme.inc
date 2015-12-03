@@ -32,7 +32,7 @@ function _loft_faq_defaults_if_empty(&$vars, $defaults) {
 function loft_faq_preprocess_loft_faq_list(&$vars) {
   global $_loft_faq_type_;
   $vars['wrapper_attributes']['class'][] = 'contextual-links-region';
-  $vars['theme_bottom']['links'] = array(
+  $vars['theme_bottom'][] = array(
     '#type' => 'contextual_links',
     '#contextual_links' => array(
       'views' => array('admin/structure/views/view', array($_loft_faq_type_)),
@@ -90,6 +90,7 @@ function loft_faq_preprocess_loft_faq_item(&$vars) {
         'loft_faq' => array('node/' . $node->nid, array()),
       ),
     );
+    $vars['theme_bottom'][] = $vars['links'];
   }
 
   $vars['total_faqs']          = array_sum($vars['total_faqs_by_category']);

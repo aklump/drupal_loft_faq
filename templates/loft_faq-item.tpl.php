@@ -12,13 +12,14 @@
  * $question
  * $answer
  * $node
+ * $theme_bottom renderable
  *
  * @ingroup loft_faq Frequently Asked Questions
  * @{
  */
 ?>
 <div class="loft-faq-item contextual-links-region">
-  <?php print render($links); ?>
   <dt class="loft-faq-question"><?php print render($question) ?></dt>
   <dd class="loft-faq-answer"><?php print render($answer) ?></dd>
+  <?php print render($theme_bottom); ?>
 </div>
