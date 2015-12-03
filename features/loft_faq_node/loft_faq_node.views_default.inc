@@ -33,43 +33,7 @@ function loft_faq_node_views_default_views() {
   $handler->display->display_options['row_options']['view_mode'] = 'full';
   $handler->display->display_options['row_options']['links'] = 0;
   $handler->display->display_options['row_options']['comments'] = 0;
-  /* Field: Content: Title */
-  $handler->display->display_options['fields']['title']['id'] = 'title';
-  $handler->display->display_options['fields']['title']['table'] = 'node';
-  $handler->display->display_options['fields']['title']['field'] = 'title';
-  $handler->display->display_options['fields']['title']['label'] = '';
-  $handler->display->display_options['fields']['title']['alter']['alter_text'] = 0;
-  $handler->display->display_options['fields']['title']['alter']['make_link'] = 0;
-  $handler->display->display_options['fields']['title']['alter']['absolute'] = 0;
-  $handler->display->display_options['fields']['title']['alter']['word_boundary'] = 1;
-  $handler->display->display_options['fields']['title']['alter']['ellipsis'] = 1;
-  $handler->display->display_options['fields']['title']['alter']['strip_tags'] = 0;
-  $handler->display->display_options['fields']['title']['alter']['trim'] = 0;
-  $handler->display->display_options['fields']['title']['alter']['html'] = 0;
-  $handler->display->display_options['fields']['title']['element_type'] = 'strong';
-  $handler->display->display_options['fields']['title']['element_label_colon'] = 0;
-  $handler->display->display_options['fields']['title']['element_default_classes'] = 1;
-  $handler->display->display_options['fields']['title']['hide_empty'] = 0;
-  $handler->display->display_options['fields']['title']['empty_zero'] = 0;
-  $handler->display->display_options['fields']['title']['link_to_node'] = 0;
-  /* Field: Content: Body */
-  $handler->display->display_options['fields']['entity_id']['id'] = 'entity_id';
-  $handler->display->display_options['fields']['entity_id']['table'] = 'field_data_body';
-  $handler->display->display_options['fields']['entity_id']['field'] = 'body';
-  $handler->display->display_options['fields']['entity_id']['label'] = '';
-  $handler->display->display_options['fields']['entity_id']['alter']['alter_text'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['make_link'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['absolute'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['word_boundary'] = 1;
-  $handler->display->display_options['fields']['entity_id']['alter']['ellipsis'] = 1;
-  $handler->display->display_options['fields']['entity_id']['alter']['strip_tags'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['trim'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['html'] = 0;
-  $handler->display->display_options['fields']['entity_id']['element_type'] = 'p';
-  $handler->display->display_options['fields']['entity_id']['element_label_colon'] = 0;
-  $handler->display->display_options['fields']['entity_id']['element_default_classes'] = 1;
-  $handler->display->display_options['fields']['entity_id']['hide_empty'] = 0;
-  $handler->display->display_options['fields']['entity_id']['empty_zero'] = 0;
+
   /* Sort criterion: Content: Sort Order (field_sort) */
   $handler->display->display_options['sorts']['field_sort_value']['id'] = 'field_sort_value';
   $handler->display->display_options['sorts']['field_sort_value']['table'] = 'field_data_field_sort';
@@ -78,9 +42,10 @@ function loft_faq_node_views_default_views() {
   $handler->display->display_options['arguments']['type']['id'] = 'type';
   $handler->display->display_options['arguments']['type']['table'] = 'node';
   $handler->display->display_options['arguments']['type']['field'] = 'type';
-  $handler->display->display_options['arguments']['type']['default_action'] = 'not found';
+  $handler->display->display_options['arguments']['type']['default_action'] = 'default';
   $handler->display->display_options['arguments']['type']['default_argument_type'] = 'fixed';
-  $handler->display->display_options['arguments']['type']['default_argument_skip_url'] = 0;
+  $handler->display->display_options['arguments']['type']['default_argument_options']['argument'] = 'loft_faq';
+
   $handler->display->display_options['arguments']['type']['summary']['number_of_records'] = '0';
   $handler->display->display_options['arguments']['type']['summary']['format'] = 'default_summary';
   $handler->display->display_options['arguments']['type']['summary_options']['items_per_page'] = '25';
@@ -99,6 +64,14 @@ function loft_faq_node_views_default_views() {
   $handler->display->display_options['filters']['status']['field'] = 'status';
   $handler->display->display_options['filters']['status']['value'] = '1';
   $handler->display->display_options['filters']['status']['group'] = 1;
+
+  /* Display: Attachment */
+  $handler = $view->new_display('attachment', 'Core', 'attachment_1');
+  $handler->display->display_options['pager']['type'] = 'none';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  /* Display: FAQs */
+  $handler = $view->new_display('block', 'FAQs', 'block_1');
+
   $export['loft_faq'] = $view;
 
   return $export;

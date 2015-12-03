@@ -23,6 +23,15 @@ and the means to embed that view on a node.
 ## ALTERNATE CONFIGURATION
 * To have multiple FAQ pages take a look at hook_loft_faq_node_append.
 
+## Configuration with Views
+* A view is provided by default with the machine name `loft_faq`.
+* You should not edit the _Format_ section, leave as is.
+* Ok to edit most other sections including: _Filters, Sort, Title_, Etc.
+* The display _Core_ is used by the module to generate pages, so be especially careful with this display.
+
+## Blocks
+* A block is available that uses the faq templates by way of `loft_faq_preprocess_views_view`.  Using this block is encouraged as it will leverage the tpl files and you will not have to write any css or theme template files.
+* If you need another block just create a new Block display on the view; as long as the display is a block on the view `loft_faq`, it will receive the same automatic formatting using the faq templates.
 
 ## DEVELOPERS
 * Take a look at `loft_faq.api.php` for advanced config.

@@ -36,5 +36,5 @@
   <?php if ($total_faqs > 10 && $has_toc) :?>
     <a class="loft-faq-top" href="#loft-faq-toc"><?php print t('See Categories') ?></a>
   <?php endif; ?>
-
+  <?php print render($theme_bottom) ?>
 </div><!-- /.loft-faq-category-wrapper -->
